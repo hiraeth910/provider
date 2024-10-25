@@ -1,0 +1,81 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+android {
+    namespace "in.telemoni.telemoni"
+    compileSdk flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
+
+    signingConfigs {
+        release {
+            keyAlias 'telemoni-key-alias'                 // Alias name for your keystore
+            keyPassword 'hanuman'            // Password used during creation
+            storeFile file('./telemoni.keystore')        // Corrected path to telemoni.keystore
+            storePassword 'hanuman'          
+        }
+        debug {
+            keyAlias 'telemoni-key-alias'
+            keyPassword 'hanuman'
+            storeFile file('./telemoni.keystore')
+            storePassword 'hanuman'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    defaultConfig {
+        applicationId "in.telemoni.telemoni"
+        minSdkVersion 23
+        targetSdkVersion 33
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release   // Use release signing config
+        }
+        debug {
+            signingConfig signingConfigs.debug     // Use debug signing config
+        }
+    }
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {}
+apply plugin: 'com.google.gms.google-services'
