@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
     if (phoneNumber.isNotEmpty) {
       try {
         // Call the API and get the generated OTP
-        //generatedOTP = await apiService.generateOTP(phoneNumber);
+        generatedOTP = await apiService.generateOTP(phoneNumber);
         FirebaseAuth.instance.verifyPhoneNumber(
             verificationCompleted: (PhoneAuthCredential) {
               print(PhoneAuthCredential);
@@ -200,4 +200,5 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+  
 }
