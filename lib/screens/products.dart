@@ -25,7 +25,7 @@ class _ProductsPageState extends State<ProductsPage> {
 
   Future<void> _fetchProducts() async {
     try {
-      final fetchedProducts = await ApiService().getProducts();
+      final fetchedProducts = await ApiService().getProducts(1);
       setState(() {
         products = fetchedProducts;
         isLoading = false;

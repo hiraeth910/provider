@@ -181,13 +181,13 @@ print('otpgen');
     }
   }
 
-  Future<List<Product>> getProducts() async {
+  Future<List<Product>> getProducts(int id) async {
     String? token = await getTokyo(); // Get token from memory or secure storage
     if (token == null) {
       throw Exception('Token is null. Please login again.');
     }
     final response = await _client.get(
-      Uri.parse(Endpoints.getProducts),
+    Uri.parse('${Endpoints.getProducts}$id'),
       headers: {
         'authorization': token,
         'Content-Type': 'application/json',
@@ -225,23 +225,29 @@ print('otpgen');
   }
 
   Future<void> raiseWithdrawal(Map<String, dynamic> request) async {
+     String? token = await getTokyo(); // Get token from memory or secure storage
+    if (token == null) {
+      throw Exception('Token is null. Please login again.');
+    }
     try {
       final response = await http.post(
         Uri.parse(Endpoints.raiseWithdrawal),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer YOUR_AUTH_TOKEN", // Add authorization token
+          'authorization': token,
         },
-        body: json.encode({
+        body: json.encode(
           request
           // "bank_id": bankId,
           // "amount": amount,
-        }),
+        ),
       );
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to raise withdrawal');
-      }
+      print(json.encode(request));
+      if (response.statusCode == 201) {
+      print('Details submitted successfully');
+    } else {
+      print('Failed to submit details: ${response.body}');
+    }
     } catch (e) {
       throw Exception('Error: $e');
     }
