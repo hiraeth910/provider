@@ -45,6 +45,7 @@ class ApiService {
   }
 
   Future<String?> generateOTP(String phoneNumber) async {
+print('otpgen');
     final response = await _client.post(
       Uri.parse(Endpoints.generateOTP), // Use baseUrl here
 
@@ -63,16 +64,20 @@ class ApiService {
     }
   }
 
-  Future<String?> verifyOTP(String phoneNumber, String otp) async {
+  Future<String?> verifyOTP(
+      String idToken, String phone) async {
     final response = await _client.post(
       Uri.parse(Endpoints.verifyOtp),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: json.encode({'number': phoneNumber, 'otp': otp}),
+      body: json.encode({
+        'idToken': idToken,
+        'phone': phone
+      }),
     );
     //print(json.encode({'number': phoneNumber, 'otp': otp}),);
-
+    print(response.body);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final token = data['token']; // Assuming the token is under 'token'
@@ -227,7 +232,8 @@ class ApiService {
           "Content-Type": "application/json",
           "Authorization": "Bearer YOUR_AUTH_TOKEN", // Add authorization token
         },
-        body: json.encode({request
+        body: json.encode({
+          request
           // "bank_id": bankId,
           // "amount": amount,
         }),

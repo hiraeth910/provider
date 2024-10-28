@@ -11,8 +11,7 @@ import 'package:telemoni/utils/secure_storage_service.dart';
 import 'package:telemoni/utils/themeprovider.dart';
 
 void main() async {
-  WidgetsFlutterBinding
-      .ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   bool token = false;
@@ -72,14 +71,13 @@ class _LoginPageState extends State<LoginPage> {
 
   // Function to generate a random OTP
 
-
   void _handleLogin() async {
-    String phoneNumber = '+91'+_phoneController.text;
+    String phoneNumber = '+91' + _phoneController.text;
 
     if (phoneNumber.isNotEmpty) {
       try {
         // Call the API and get the generated OTP
-        generatedOTP = await apiService.generateOTP(phoneNumber);
+        generatedOTP = await apiService.generateOTP(_phoneController.text);
         FirebaseAuth.instance.verifyPhoneNumber(
             verificationCompleted: (PhoneAuthCredential) {
               print(PhoneAuthCredential);
@@ -122,34 +120,53 @@ class _LoginPageState extends State<LoginPage> {
 
     if (enteredOTP.isNotEmpty && phoneNumber.isNotEmpty) {
       try {
+        // Attempt to create credential with verificationId and OTP code
+        final cred = PhoneAuthProvider.credential(
+            verificationId: verify, smsCode: enteredOTP);
 
-        final cred = PhoneAuthProvider.credential(verificationId: verify,smsCode: enteredOTP);
-        await FirebaseAuth.instance.signInWithCredential(cred);
-        Navigator.pushReplacementNamed(context, '/home');
-        // Call the API to verify the OTP
-        // String? token = await apiService.verifyOTP(phoneNumber, enteredOTP);
+        UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithCredential(cred);
 
-        // if (token != null) {
-        //   // If the token is returned, store it in secure storage
-        //   await secureStorageService.storeToken(token);
-        //   LocalStorage.setLogin('y');
-        //   print(token);
+        // Adding a small delay to ensure the ID token is ready
+        await Future.delayed(Duration(seconds: 1));
 
-        //   // Navigate to the home page only if the token is successfully stored
-        //   Navigator.pushReplacementNamed(context, '/home');
-        // } else {
-        //   // If the token is not returned, show an error
-        //   ScaffoldMessenger.of(context).showSnackBar(
-        //     const SnackBar(content: Text('Failed to verify OTP')),
-        //   );
-        // }
+        // Get the ID token explicitly
+        String? idToken = await userCredential.user?.getIdToken();
+        print("Generated ID Token: $idToken");
+
+        if (idToken != null) {
+          // Call the API to verify the OTP, pass the idToken and phone number
+          String? token = await apiService.verifyOTP(idToken, phoneNumber);
+
+          if (token != null) {
+            // Store the custom token
+            await secureStorageService.storeToken(token);
+            LocalStorage.setLogin('y');
+            print("Custom Token: $token");
+
+            // Navigate to the home page on successful verification
+            Navigator.pushReplacementNamed(context, '/home');
+          } else {
+            // Show an error if token generation failed
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to verify OTP')),
+            );
+          }
+        } else {
+          // If ID token is null, handle the failure
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to generate ID token')),
+          );
+        }
       } catch (e) {
-        // Handle API error
+        // Log the error for debugging
+        print("Error: $e");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text('Error: ${e.toString()}')),
         );
       }
     } else {
+      // Handle empty OTP input
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter the OTP')),
       );
@@ -200,5 +217,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-  
 }
