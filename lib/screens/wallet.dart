@@ -41,10 +41,15 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
 
   // Fetches the user's transaction history
   void fetchTransactions() async {
-    final history = await apiService.getWithdrawalHistory();
-    setState(() {
-      transactions = history;
-    });
+    try {
+      final history = await apiService.getWithdrawalHistory();
+      setState(() {
+        transactions = history;
+      });
+    } catch (e) {
+      // Handle error, e.g., show a snackbar or dialog
+      print('Error fetching transactions: $e');
+    }
   }
 
   void refreshTransactions() {
@@ -306,7 +311,6 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
               child: Text(
                 'Withdrawal History',
                 style: TextStyle(
-                  color: customColors.textColor,
                   fontSize: screenHeight * 0.02,
                 ),
               ),
@@ -319,16 +323,17 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
                     final transaction = transactions[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(
-                          vertical: 8.0, horizontal: 8.0),
+                        vertical: 8.0,
+                        horizontal: 8.0,
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Transaction ID: 1',//${transaction.id}',
+                              'Transaction ID: ${transaction.transactionId}',
                               style: TextStyle(
-                                color: customColors.textColor,
                                 fontWeight: FontWeight.bold,
                                 fontSize: screenHeight * 0.018,
                               ),
@@ -336,19 +341,17 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
                             Text(
                               'Amount: \$${transaction.amount}',
                               style: TextStyle(
-                                color: customColors.textColor,
                                 fontSize: screenHeight * 0.016,
                               ),
                             ),
                             Text(
                               'Status: ${transaction.status}',
                               style: TextStyle(
-                                color: customColors.textColor,
                                 fontSize: screenHeight * 0.016,
                               ),
                             ),
                             Text(
-                              'Date: ${transaction.date}',
+                              'Date: ${transaction.formattedDate}',
                               style: TextStyle(
                                 color: customColors.textColor,
                                 fontSize: screenHeight * 0.016,

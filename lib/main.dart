@@ -99,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
 
     if (phoneNumber.isNotEmpty) {
       try {
-        generatedOTP = await apiService.generateOTP(_phoneController.text);
+        //generatedOTP = await apiService.generateOTP(_phoneController.text);
         FirebaseAuth.instance.verifyPhoneNumber(
           verificationCompleted: (PhoneAuthCredential credential) {
             print("Verification completed: $credential");
@@ -142,6 +142,7 @@ class _LoginPageState extends State<LoginPage> {
  Future<void> _verifyOTP() async {
     String enteredOTP = _otpController.text;
     String phoneNumber = _phoneController.text;
+    print(enteredOTP);
 
     if (enteredOTP.isNotEmpty && phoneNumber.isNotEmpty) {
       try {

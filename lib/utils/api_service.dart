@@ -256,23 +256,28 @@ print('otpgen');
 
   // Withdrawal history API
   Future<List<Transaction>> getWithdrawalHistory() async {
-    try {
-      final response = await http.get(
-        Uri.parse(Endpoints.withdrawalHistory),
-        headers: {
-          "Authorization": "Bearer YOUR_AUTH_TOKEN", // Add authorization token
-        },
-      );
-
-      if (response.statusCode == 200) {
-        // Parse the JSON data into a list of products
-        List<dynamic> jsonData = jsonDecode(response.body);
-        return jsonData.map((item) => Transaction.fromJson(item)).toList();
-      } else {
-        throw Exception('Failed to fetch withdrawal history');
-      }
-    } catch (e) {
-      throw Exception('Error: $e');
-    }
+  String? token = await getTokyo(); // Get token from memory or secure storage
+  if (token == null) {
+    throw Exception('Token is null. Please login again.');
   }
+  try {
+    final response = await http.get(
+      Uri.parse(Endpoints.withdrawalHistory),
+      headers: {
+        'authorization': token,
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> jsonData = jsonDecode(response.body);
+      return jsonData.map((item) => Transaction.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to fetch withdrawal history');
+    }
+  } catch (e) {
+    throw Exception('Error: $e');
+  }
+}
+
 }

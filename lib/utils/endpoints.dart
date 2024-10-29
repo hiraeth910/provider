@@ -11,5 +11,5 @@ class Endpoints {
   static const String getProducts = '$baseUrl/api/provider/get/products/';
   static const String deleteBankAccount = '$baseUrl/api/provider/delete/bankaccount';
   static const String raiseWithdrawal = '$baseUrl/api/provider/raise/withdrawl';
-  static const String withdrawalHistory = '$baseUrl/api/provider/wallet/transactions';
+  static const String withdrawalHistory = '$baseUrl/api/provider/wallet/transactions/1';
 }
