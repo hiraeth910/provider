@@ -65,7 +65,7 @@ print('otpgen');
   }
 
   Future<String?> verifyOTP(
-      String idToken, String phone) async {
+      String idToken, String phone,String fcmtoken) async {
     final response = await _client.post(
       Uri.parse(Endpoints.verifyOtp),
       headers: {
@@ -73,7 +73,8 @@ print('otpgen');
       },
       body: json.encode({
         'idToken': idToken,
-        'phone': phone
+        'phone': phone,
+        'fcm':fcmtoken
       }),
     );
     //print(json.encode({'number': phoneNumber, 'otp': otp}),);

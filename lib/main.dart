@@ -1,33 +1,47 @@
-import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:telemoni/screens/home.dart';
 import 'package:telemoni/utils/api_service.dart';
-import 'package:telemoni/utils/localstorage.dart';
 import 'package:telemoni/utils/secure_storage_service.dart';
 import 'package:telemoni/utils/themeprovider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  bool token = false;
-  if (LocalStorage.getLogin() == 'y') {
-    token = true;
+
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // Request permission to show notifications (iOS specific)
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    print('User granted permission for notifications');
+  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+    print('User granted provisional permission for notifications');
+  } else {
+    print('User declined or has not accepted permission for notifications');
   }
 
-  print(token);
 
+
+  // Set up notification tap functionality
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    _handleNotificationClick(message);
+  });
+
+  // Check for existing JWT token to determine the initial route
+  String? jwtToken = await SecureStorageService().getToken();
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
-      child: MyApp(
-          initialRoute: token == false
-              ? '/login'
-              : '/home'), // Direct to appropriate screen
+      child: MyApp(initialRoute: jwtToken == null ? '/login' : '/home'),
     ),
   );
 }
@@ -53,6 +67,16 @@ class MyApp extends StatelessWidget {
   }
 }
 
+// Handle notification clicks
+void _handleNotificationClick(RemoteMessage message) {
+  // Extract data from the notification payload
+  if (message.data.isNotEmpty) {
+    // Perform any specific actions based on the notification data
+    print("Notification clicked with data: ${message.data}");
+    // Example: navigate to a specific screen or perform an action
+  }
+}
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -70,38 +94,39 @@ class _LoginPageState extends State<LoginPage> {
   var verify = '';
 
   // Function to generate a random OTP
-
   void _handleLogin() async {
     String phoneNumber = '+91' + _phoneController.text;
 
     if (phoneNumber.isNotEmpty) {
       try {
-        // Call the API and get the generated OTP
         generatedOTP = await apiService.generateOTP(_phoneController.text);
         FirebaseAuth.instance.verifyPhoneNumber(
-            verificationCompleted: (PhoneAuthCredential) {
-              print(PhoneAuthCredential);
-            },
-            verificationFailed: (Error) {
-              print(Error);
-            },
-            codeSent: (verificationId, forceResendingToken) {
-              verify = verificationId;
-            },
-            codeAutoRetrievalTimeout: (verificationId) {
-              print('autoretrievaltimeout');
-            },
-            phoneNumber: phoneNumber);
+          verificationCompleted: (PhoneAuthCredential credential) {
+            print("Verification completed: $credential");
+          },
+          verificationFailed: (FirebaseAuthException error) {
+            print("Verification failed: $error");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: ${error.message}')),
+            );
+          },
+          codeSent: (verificationId, forceResendingToken) {
+            verify = verificationId;
+          },
+          codeAutoRetrievalTimeout: (verificationId) {
+            print('Auto-retrieval timeout');
+          },
+          phoneNumber: phoneNumber,
+        );
 
         setState(() {
-          otpVisible = true; // Show OTP input field
+          otpVisible = true;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('OTP sent to your phone')),
         );
       } catch (e) {
-        // Handle errors (e.g., show a SnackBar)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString())),
         );
@@ -113,60 +138,51 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Function to handle OTP verification and saving the token (phone number)
-  Future<void> _verifyOTP() async {
+  // Function to handle OTP verification and generate FCM token after authentication
+ Future<void> _verifyOTP() async {
     String enteredOTP = _otpController.text;
     String phoneNumber = _phoneController.text;
 
     if (enteredOTP.isNotEmpty && phoneNumber.isNotEmpty) {
       try {
-        // Attempt to create credential with verificationId and OTP code
+        // Verify OTP and get UserCredential
         final cred = PhoneAuthProvider.credential(
             verificationId: verify, smsCode: enteredOTP);
-
         UserCredential userCredential =
             await FirebaseAuth.instance.signInWithCredential(cred);
 
-        // Adding a small delay to ensure the ID token is ready
-        await Future.delayed(Duration(seconds: 1));
+        // Generate FCM Token
+        String? fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          print("Generated FCM Token: $fcmToken");
 
-        // Get the ID token explicitly
-        String? idToken = await userCredential.user?.getIdToken();
-        print("Generated ID Token: $idToken");
+          // Send FCM token and other user info to your server
+          String? idToken = await userCredential.user?.getIdToken();
+          if(idToken!=null){
 
-        if (idToken != null) {
-          // Call the API to verify the OTP, pass the idToken and phone number
-          String? token = await apiService.verifyOTP(idToken, phoneNumber);
+          String? serverToken =
+              await apiService.verifyOTP(idToken, phoneNumber,fcmToken);
 
-          if (token != null) {
-            // Store the custom token
-            await secureStorageService.storeToken(token);
-            LocalStorage.setLogin('y');
-            print("Custom Token: $token");
-
-            // Navigate to the home page on successful verification
+          if (serverToken != null) {
+            // Store server token in secure storage and proceed
+            await secureStorageService.storeToken(serverToken);
             Navigator.pushReplacementNamed(context, '/home');
+          }
           } else {
-            // Show an error if token generation failed
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Failed to verify OTP')),
             );
           }
         } else {
-          // If ID token is null, handle the failure
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to generate ID token')),
-          );
+          print('Failed to generate FCM Token');
         }
       } catch (e) {
-        // Log the error for debugging
         print("Error: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${e.toString()}')),
         );
       }
     } else {
-      // Handle empty OTP input
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter the OTP')),
       );
@@ -198,7 +214,7 @@ class _LoginPageState extends State<LoginPage> {
             if (otpVisible) ...[
               const SizedBox(height: 20),
               Text(
-                'OTP: $generatedOTP', // Display the received OTP
+                'OTP: $generatedOTP',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               TextField(
@@ -208,7 +224,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _verifyOTP, // You will define _verifyOTP later
+                onPressed: _verifyOTP,
                 child: const Text('Verify OTP and Login'),
               ),
             ],
