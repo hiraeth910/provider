@@ -58,3 +58,18 @@ class Transaction {
     );
   }
 }
+
+class Balance {
+  final int balance;
+  final bool req;
+
+  Balance({required this.balance, required this.req});
+
+  factory Balance.fromJson(Map<String, dynamic> json) {
+    return Balance(
+      balance: json['balance'],
+      req: json['req'],
+    );
+  }
+}
+

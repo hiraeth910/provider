@@ -255,14 +255,14 @@ print('otpgen');
   }
 
   // Withdrawal history API
-  Future<List<Transaction>> getWithdrawalHistory() async {
+  Future<List<Transaction>> getWithdrawalHistory(int id) async {
   String? token = await getTokyo(); // Get token from memory or secure storage
   if (token == null) {
     throw Exception('Token is null. Please login again.');
   }
   try {
     final response = await http.get(
-      Uri.parse(Endpoints.withdrawalHistory),
+      Uri.parse('${Endpoints.withdrawalHistory}$id'),
       headers: {
         'authorization': token,
         'Content-Type': 'application/json',
@@ -279,5 +279,32 @@ print('otpgen');
     throw Exception('Error: $e');
   }
 }
+
+
+Future<Balance> getBalance() async {
+  String? token = await getTokyo();
+  if (token == null) {
+    throw Exception('Token is null. Please login again.');
+  }
+  try {
+    final response = await http.get(
+      Uri.parse(Endpoints.getWalletBalance),
+      headers: {
+        'authorization': token,
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      Map<String, dynamic> jsonData = jsonDecode(response.body);
+      return Balance.fromJson(jsonData);  // Parse to Balance model
+    } else {
+      throw Exception('Failed to fetch balance');
+    }
+  } catch (e) {
+    throw Exception('Error: $e');
+  }
+}
+
 
 }
