@@ -32,17 +32,23 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
   }
 
   // Fetches user balance and withdrawal request status
-  void fetchBalanceAndReqStatus() async {
+void fetchBalanceAndReqStatus() async {
+  try {
+    Balance balanceData = await apiService.getBalance();
     setState(() {
-      balance = 1000; // Example balance
-      req = false; // Example condition: true disables the withdraw button
+      balance = balanceData.balance;
+      req = balanceData.req;
     });
+  } catch (e) {
+    print('Error fetching balance: $e');
   }
+}
+
 
   // Fetches the user's transaction history
   void fetchTransactions() async {
     try {
-      final history = await apiService.getWithdrawalHistory();
+      final history = await apiService.getWithdrawalHistory(1);
       setState(() {
         transactions = history;
       });
@@ -115,30 +121,31 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
           children: [
             // Display available balance
             Card(
-              margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.02),
-              child: Padding(
-                padding: EdgeInsets.all(screenWidth * 0.04),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Available Balance:',
-                      style: TextStyle(
-                        color: customColors.textColor,
-                        fontSize: screenHeight * 0.02,
-                      ),
-                    ),
-                    Text(
-                      '\$${balance ?? '...'}',
-                      style: TextStyle(
-                        color: customColors.textColor,
-                        fontSize: screenHeight * 0.02,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+  margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.02),
+  child: Padding(
+    padding: EdgeInsets.all(screenWidth * 0.04),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Available Balance:',
+          style: TextStyle(
+            color: customColors.textColor,
+            fontSize: screenHeight * 0.02,
+          ),
+        ),
+        Text(
+          '\$${balance ?? '...'}',
+          style: TextStyle(
+            color: customColors.textColor,
+            fontSize: screenHeight * 0.02,
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+
             SizedBox(height: screenHeight * 0.03),
             // Button to raise withdrawal
             ElevatedButton(
