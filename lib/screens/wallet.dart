@@ -24,37 +24,61 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
   String? _amount;
   bool _isApproved = false;
   final ApiService apiService = ApiService(); // Initialize ApiService
+  bool isLoading = false;
+  bool hasMoreTransactions = true;
+  int currentPage = 1;
+  final ScrollController _scrollController = ScrollController();
+  static const int scrollThreshold = 7; // Set threshold to 7 transactions
 
   @override
   void initState() {
     super.initState();
     fetchBalanceAndReqStatus();
+    _scrollController.addListener(_onScroll);
   }
 
   // Fetches user balance and withdrawal request status
-void fetchBalanceAndReqStatus() async {
-  try {
-    Balance balanceData = await apiService.getBalance();
-    setState(() {
-      balance = balanceData.balance;
-      req = balanceData.req;
-    });
-  } catch (e) {
-    print('Error fetching balance: $e');
-  }
-}
-
-
-  // Fetches the user's transaction history
-  void fetchTransactions() async {
+  void fetchBalanceAndReqStatus() async {
     try {
-      final history = await apiService.getWithdrawalHistory(1);
+      Balance balanceData = await apiService.getBalance();
       setState(() {
-        transactions = history;
+        balance = balanceData.balance;
+        req = balanceData.req;
       });
     } catch (e) {
-      // Handle error, e.g., show a snackbar or dialog
+      print('Error fetching balance: $e');
+    }
+  }
+
+  // Fetches the user's transaction history
+  Future<void> fetchTransactions() async {
+    if (isLoading || !hasMoreTransactions) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final history = await apiService.getWithdrawalHistory(currentPage);
+      setState(() {
+        transactions.addAll(history);
+        isLoading = false;
+        currentPage++;
+        hasMoreTransactions = history.isNotEmpty;
+      });
+    } catch (e) {
       print('Error fetching transactions: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        transactions.length >= scrollThreshold) {
+      fetchTransactions();
     }
   }
 
@@ -121,30 +145,30 @@ void fetchBalanceAndReqStatus() async {
           children: [
             // Display available balance
             Card(
-  margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.02),
-  child: Padding(
-    padding: EdgeInsets.all(screenWidth * 0.04),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Available Balance:',
-          style: TextStyle(
-            color: customColors.textColor,
-            fontSize: screenHeight * 0.02,
-          ),
-        ),
-        Text(
-          '\$${balance ?? '...'}',
-          style: TextStyle(
-            color: customColors.textColor,
-            fontSize: screenHeight * 0.02,
-          ),
-        ),
-      ],
-    ),
-  ),
-),
+              margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.02),
+              child: Padding(
+                padding: EdgeInsets.all(screenWidth * 0.04),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Available Balance:',
+                      style: TextStyle(
+                        color: customColors.textColor,
+                        fontSize: screenHeight * 0.02,
+                      ),
+                    ),
+                    Text(
+                      '\$${balance ?? '...'}',
+                      style: TextStyle(
+                        color: customColors.textColor,
+                        fontSize: screenHeight * 0.02,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
             SizedBox(height: screenHeight * 0.03),
             // Button to raise withdrawal
@@ -317,22 +341,27 @@ void fetchBalanceAndReqStatus() async {
               },
               child: Text(
                 'Withdrawal History',
-                style: TextStyle(
-                  fontSize: screenHeight * 0.02,
-                ),
+                style: TextStyle(fontSize: screenHeight * 0.02),
               ),
             ),
             if (showTransactions)
               Expanded(
                 child: ListView.builder(
-                  itemCount: transactions.length,
+                  controller: _scrollController,
+                  itemCount: transactions.length +
+                      (hasMoreTransactions &&
+                              transactions.length >= scrollThreshold
+                          ? 1
+                          : 0),
                   itemBuilder: (context, index) {
+                    if (index == transactions.length) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
                     final transaction = transactions[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(
-                        vertical: 8.0,
-                        horizontal: 8.0,
-                      ),
+                          vertical: 8.0, horizontal: 8.0),
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Column(
@@ -341,28 +370,22 @@ void fetchBalanceAndReqStatus() async {
                             Text(
                               'Transaction ID: ${transaction.transactionId}',
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: screenHeight * 0.018,
-                              ),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: screenHeight * 0.018),
                             ),
                             Text(
                               'Amount: \$${transaction.amount}',
-                              style: TextStyle(
-                                fontSize: screenHeight * 0.016,
-                              ),
+                              style: TextStyle(fontSize: screenHeight * 0.016),
                             ),
                             Text(
                               'Status: ${transaction.status}',
-                              style: TextStyle(
-                                fontSize: screenHeight * 0.016,
-                              ),
+                              style: TextStyle(fontSize: screenHeight * 0.016),
                             ),
                             Text(
                               'Date: ${transaction.formattedDate}',
                               style: TextStyle(
-                                color: customColors.textColor,
-                                fontSize: screenHeight * 0.016,
-                              ),
+                                  color: customColors.textColor,
+                                  fontSize: screenHeight * 0.016),
                             ),
                           ],
                         ),

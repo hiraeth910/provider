@@ -136,28 +136,32 @@ print('otpgen');
     }
   }
 
-  Future<void> createProduct(Map<String, dynamic> create) async {
-    String? token = await getTokyo(); // Get token from memory or secure storage
-    if (token == null) {
-      throw Exception('Token is null. Please login again.');
-    }
-
-    final response = await _client.post(
-      Uri.parse(Endpoints.createProduct),
-      headers: {
-        'authorization': token,
-        'Content-Type': 'application/json',
-      },
-      body: json.encode(create),
-    );
-    print(json.encode(create));
-
-    if (response.statusCode == 201) {
-      print('Details submitted successfully');
-    } else {
-      print('Failed to submit details: ${response.body}');
-    }
+  Future<http.Response> createProduct(Map<String, dynamic> create) async {
+  String? token = await getTokyo(); // Get token from memory or secure storage
+  if (token == null) {
+    throw Exception('Token is null. Please login again.');
   }
+
+  final response = await _client.post(
+    Uri.parse(Endpoints.createProduct),
+    headers: {
+      'authorization': token,
+      'Content-Type': 'application/json',
+    },
+    body: json.encode(create),
+  );
+
+  print(json.encode(create));
+
+  if (response.statusCode == 201) {
+    print('Details submitted successfully');
+  } else {
+    print('Failed to submit details: ${response.body}');
+  }
+
+  return response; // Return the response
+}
+
 
   Future<List<BankDetails>> getBankAccounts() async {
     String? token = await getTokyo(); // Get token from memory or secure storage
@@ -306,5 +310,29 @@ Future<Balance> getBalance() async {
   }
 }
 
+Future<List<EarningsTrans>> getEarningsTransactions(int id) async {
+  String? token = await getTokyo(); // Get token from memory or secure storage
+  if (token == null) {
+    throw Exception('Token is null. Please login again.');
+  }
+  try {
+    final response = await http.get(
+      Uri.parse('${Endpoints.getEarningsTransactions}$id'),
+      headers: {
+        'authorization': token,
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> jsonData = jsonDecode(response.body);
+      return jsonData.map((item) => EarningsTrans.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to fetch withdrawal history');
+    }
+  } catch (e) {
+    throw Exception('Error: $e');
+  }
+}
 
 }

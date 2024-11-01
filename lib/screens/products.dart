@@ -17,24 +17,49 @@ class _ProductsPageState extends State<ProductsPage> {
   List<Product> products = [];
   bool isLoading = true;
 
+
+  int currentPage = 1;
+  bool hasMoreProducts = true;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _fetchProducts();
+    _scrollController.addListener(_onScroll);
   }
 
   Future<void> _fetchProducts() async {
+    if (!hasMoreProducts) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
     try {
-      final fetchedProducts = await ApiService().getProducts(1);
+      final fetchedProducts = await ApiService().getProducts(currentPage);
       setState(() {
-        products = fetchedProducts;
+        products.addAll(fetchedProducts);
         isLoading = false;
+        currentPage++;
+
+        // Check if fetchedProducts is empty to determine end of list
+        hasMoreProducts = fetchedProducts.isNotEmpty;
       });
     } catch (e) {
       print('Error fetching products: $e');
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  void _onScroll() {
+    // Trigger loading more only if we have enough products to enable scrolling
+    if (_scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        products.length >= 5) {
+      _fetchProducts();
     }
   }
 
@@ -72,7 +97,7 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     final colors = Provider.of<ThemeProvider>(context).customColors;
 
@@ -80,22 +105,31 @@ class _ProductsPageState extends State<ProductsPage> {
       appBar: AppBar(
         title: const Text('Products Page'),
       ),
-      body: isLoading
+      body: products.isEmpty && isLoading
           ? const Center(child: CircularProgressIndicator())
-          : products.isEmpty
-              ? const Center(child: Text('No products available'))
-              : ListView.builder(
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    final backgroundColor = getRandomColor(colors);
-                    return GestureDetector(
-                      onTap: () => onCardTap(product),
-                      child: _buildProductCard(product, backgroundColor, colors),
-                    );
-                  },
-                ),
+          : ListView.builder(
+              controller: _scrollController,
+              itemCount: products.length + (hasMoreProducts && products.length >= 6 ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == products.length) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final product = products[index];
+                final backgroundColor = getRandomColor(colors);
+                return GestureDetector(
+                  onTap: () => onCardTap(product),
+                  child: _buildProductCard(product, backgroundColor, colors),
+                );
+              },
+            ),
     );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Widget _buildProductCard(Product product, Color backgroundColor, CustomColorScheme colors) {

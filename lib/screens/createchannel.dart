@@ -271,46 +271,52 @@ class _CreateChannelPageState extends State<CreateChannelPage> {
   }
 
   void _createRequest() async {
-    // Check for mandatory fields
-    if (_ppu.isEmpty ||
-        _nameController.text.isEmpty ||
-        _descriptionController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('All fields except the image are mandatory.')),
-      );
-      return;
-    }
+  // Check for mandatory fields
+  if (_ppu.isEmpty ||
+      _nameController.text.isEmpty ||
+      _descriptionController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('All fields except the image are mandatory.')),
+    );
+    return;
+  }
 
-    // Construct the product creation request
-    final request = {
-      'ppu': _ppu,
-      'channelName': _nameController.text,
-      'displayText': _descriptionController.text,
-      'image': _base64Image, // Ensure _base64Image contains the image in base64
-      'type': 'telegram',
-      'ctype': widget.type == 'Channel',
-      'validity': _validity.toLowerCase(),
-    };
+  // Construct the product creation request
+  final request = {
+    'ppu': _ppu,
+    'channelName': _nameController.text,
+    'displayText': _descriptionController.text,
+    'image': _base64Image, // Ensure _base64Image contains the image in base64
+    'type': 'telegram',
+    'ctype': widget.type == 'Channel',
+    'validity': _validity.toLowerCase(),
+  };
 
-    try {
-      // Call the API to create the product
-      await apiService.createProduct(request);
+  try {
+    // Call the API to create the product
+    final response = await apiService.createProduct(request);
+
+    if (response.statusCode == 201) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product created successfully!')),
       );
 
-      Navigator.push(
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (context) => const ProductsPage(),
-        ),
+        MaterialPageRoute(builder: (context) => const ProductsPage()),
+        (Route<dynamic> route) => route.isFirst, // Ensures back navigation goes to main.dart
       );
-    } catch (e) {
-      // Handle any errors
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating product: $e')),
+        SnackBar(content: Text('Failed to create product: ${response.body}')),
       );
     }
+  } catch (e) {
+    // Handle any errors
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error creating product: $e')),
+    );
   }
+}
+
 }

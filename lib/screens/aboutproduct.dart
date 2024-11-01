@@ -23,14 +23,14 @@ Widget build(BuildContext context) {
           product.name,
           style: TextStyle(color: customColors.textColor),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.edit, color: customColors.textColor),
-            onPressed: () {
-              // Add your edit functionality here
-            },
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(Icons.edit, color: customColors.textColor),
+        //     onPressed: () {
+        //       // Add your edit functionality here
+        //     },
+        //   ),
+        // ],
         backgroundColor: Theme.of(context).colorScheme.inversePrimary, // Using the seed color from ThemeData
       ),
       body: Column(

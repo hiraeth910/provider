@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:telemoni/main.dart';
 import 'package:telemoni/screens/banking.dart';
+import 'package:telemoni/screens/earnings.dart';
 import 'package:telemoni/screens/wallet.dart';
 import 'package:telemoni/utils/localstorage.dart';
 import 'package:telemoni/utils/themeprovider.dart';
@@ -42,8 +42,8 @@ class ProfilePage extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: avatarRadius,
-                      backgroundImage: const AssetImage(
- 'assets/profile.png'),                    ),
+                      backgroundImage: const AssetImage('assets/profile.png'),
+                    ),
                     SizedBox(width: paddingScale),
                     Text(
                       'Hello, Ranku',
@@ -87,12 +87,13 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       onTap: () {
-Navigator.push(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const WithdrawalPage(),
                           ),
-                        );                      },
+                        );
+                      },
                     ),
                     const Divider(),
                     ListTile(
@@ -109,7 +110,12 @@ Navigator.push(
                         ),
                       ),
                       onTap: () {
-                        // Handle Earnings tap
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EarningsPage(),
+                          ),
+                        );
                       },
                     ),
                     const Divider(),
@@ -127,16 +133,14 @@ Navigator.push(
                         ),
                       ),
                       onTap: () {
-                      Navigator.push(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const Banking(),
+                            builder: (context) => const Banking(),
                           ),
                         );
                       },
                     ),
-
                   ],
                 ),
               ),
@@ -211,8 +215,7 @@ Navigator.push(
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const LoginPage(),
+                            builder: (context) => const LoginPage(),
                           ),
                         );
                       },

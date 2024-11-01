@@ -73,3 +73,42 @@ class Balance {
   }
 }
 
+class EarningsTrans {
+  final int amount;
+  final String buyerName;
+  final DateTime purchaseTime;
+
+  EarningsTrans({
+    required this.amount,
+    required this.buyerName,
+    required this.purchaseTime,
+  });
+
+  // Factory constructor to parse JSON
+  factory EarningsTrans.fromJson(Map<String, dynamic> json) {
+    return EarningsTrans(
+      amount: json['amount'],
+      buyerName: json['buyer_name'],
+      purchaseTime: DateTime.parse(json['purchase_time']),
+    );
+  }
+
+  // Custom date formatting method
+  String get formattedPurchaseTime {
+    return _formatDate(purchaseTime);
+  }
+
+  // Method to format DateTime to 'yyyy-MM-dd – HH:mm'
+  String _formatDate(DateTime dateTime) {
+    String year = dateTime.year.toString();
+    String month = dateTime.month.toString().padLeft(2, '0');  // Ensures two-digit month
+    String day = dateTime.day.toString().padLeft(2, '0');      // Ensures two-digit day
+    String hour = dateTime.hour.toString().padLeft(2, '0');    // Ensures two-digit hour
+    String minute = dateTime.minute.toString().padLeft(2, '0'); // Ensures two-digit minute
+    
+    return "$year-$month-$day – $hour:$minute";
+  }
+}
+
+
+
