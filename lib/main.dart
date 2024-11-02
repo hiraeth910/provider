@@ -132,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
 
     if (phoneNumber.isNotEmpty) {
       try {
-        //generatedOTP = await apiService.generateOTP(_phoneController.text);
+        generatedOTP = await apiService.generateOTP(_phoneController.text);
         FirebaseAuth.instance.verifyPhoneNumber(
           verificationCompleted: (PhoneAuthCredential credential) {
             print("Verification completed: $credential");
@@ -247,10 +247,10 @@ class _LoginPageState extends State<LoginPage> {
             ),
             if (otpVisible) ...[
               const SizedBox(height: 20),
-              Text(
-                'OTP: $generatedOTP',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+              // Text(
+              //   'OTP: $generatedOTP',
+              //   style: const TextStyle(fontWeight: FontWeight.bold),
+              // ),
               TextField(
                 controller: _otpController,
                 keyboardType: TextInputType.number,

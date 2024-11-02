@@ -65,7 +65,7 @@ class ThemeProvider with ChangeNotifier, WidgetsBindingObserver {
             customGrey: Colors.grey[850]!,
             shadowColor: Colors.white.withOpacity(0.1),
             customRed: Colors.red[900]!,
-            customGreen: Colors.green[900]!,
+            customGreen: const Color.fromARGB(255, 66, 199, 75)!,
             iconColor:
                 Color.fromARGB(255, 238, 232, 219), // Wheatish color for icons
             textColor:
@@ -74,7 +74,7 @@ class ThemeProvider with ChangeNotifier, WidgetsBindingObserver {
           )
         : CustomColorScheme(
             customRed: Colors.redAccent,
-            customGreen: Colors.greenAccent,
+            customGreen: const Color.fromARGB(255, 15, 104, 61),
             customBlue: Colors.blueAccent,
             customYellow: Colors.yellowAccent,
             customGrey: Colors.grey.shade300,

@@ -4,7 +4,9 @@ import 'package:telemoni/main.dart';
 import 'package:telemoni/screens/banking.dart';
 import 'package:telemoni/screens/earnings.dart';
 import 'package:telemoni/screens/wallet.dart';
+import 'package:telemoni/utils/api_service.dart';
 import 'package:telemoni/utils/localstorage.dart';
+import 'package:telemoni/utils/secure_storage_service.dart';
 import 'package:telemoni/utils/themeprovider.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -13,7 +15,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-
+  SecureStorageService secureStorageService = SecureStorageService();
     // Access custom colors from ThemeProvider
     final customColors = Provider.of<ThemeProvider>(context).customColors;
 
@@ -212,6 +214,8 @@ class ProfilePage extends StatelessWidget {
                       ),
                       onTap: () async {
                         LocalStorage.removeLogin();
+                        secureStorageService.deleteToken();
+                        ApiService.clearToken();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

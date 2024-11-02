@@ -30,6 +30,8 @@ class ApiService {
 
   // Method to get the token, either from memory or secure storage if not set
   Future<String?> getTokyo() async {
+    print('stoken:${ await secureStorageService.getToken()}');
+    
     if (_token != null) {
       return _token; // Return in-memory token if already set
     } else {
@@ -46,6 +48,8 @@ class ApiService {
 
   Future<String?> generateOTP(String phoneNumber) async {
 print('otpgen');
+String? token = await getTokyo(); 
+print('token:$token');
     final response = await _client.post(
       Uri.parse(Endpoints.generateOTP), // Use baseUrl here
 
@@ -54,7 +58,7 @@ print('otpgen');
       },
       body: json.encode({'number': phoneNumber}),
     );
-    print(response.body);
+    print(json.encode({'number': phoneNumber}));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -97,7 +101,7 @@ print('otpgen');
     if (token == null) {
       throw Exception('Token is null. Please login again.');
     }
-
+    print(token);
     final response = await _client.post(
       Uri.parse(Endpoints.addPan),
       headers: {
