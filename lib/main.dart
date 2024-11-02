@@ -4,9 +4,40 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:telemoni/screens/home.dart';
+import 'package:telemoni/screens/wallet.dart';
 import 'package:telemoni/utils/api_service.dart';
 import 'package:telemoni/utils/secure_storage_service.dart';
 import 'package:telemoni/utils/themeprovider.dart';
+final GlobalKey<NavigatorState> notificationNavigatorKey =
+    GlobalKey<NavigatorState>();
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // This handler is called when the app is in the background or terminated.
+  await Firebase.initializeApp();
+  _handleNotification(message);
+}
+
+void _handleNotification(RemoteMessage message) async {
+  SecureStorageService secureStorageService = SecureStorageService();
+
+  // Check if the notification is for updating the JWT token
+  if (message.data.containsKey('new_jwt_token')) {
+    String newJwtToken = message.data['new_jwt_token'];
+    // Update the JWT token in secure storage
+    await secureStorageService.storeToken(newJwtToken);
+    print("JWT token updated from notification!");
+  }
+
+  // Check if the notification is a transactional message (e.g., withdrawal)
+  if (message.data.containsKey('transaction_type') &&
+      message.data['transaction_type'] == 'withdrawal') {
+    // Navigate to WithdrawalPage
+    // This requires a Navigator context. Use a global key for the navigator if needed.
+    notificationNavigatorKey.currentState?.push(
+      MaterialPageRoute(builder: (context) => WithdrawalPage()),
+    );
+    print("Navigated to WithdrawalPage from notification!");
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,15 +60,17 @@ void main() async {
     print('User declined or has not accepted permission for notifications');
   }
 
+  // Set up background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-
-  // Set up notification tap functionality
+  // Set up notification tap functionality for when the app is opened from a notification
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    _handleNotificationClick(message);
+    _handleNotification(message);
   });
 
   // Check for existing JWT token to determine the initial route
   String? jwtToken = await SecureStorageService().getToken();
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
