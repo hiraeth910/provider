@@ -4,77 +4,33 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:telemoni/screens/home.dart';
-import 'package:telemoni/screens/wallet.dart';
 import 'package:telemoni/utils/api_service.dart';
+import 'package:telemoni/utils/localstorage.dart';
+import 'package:telemoni/utils/notifications.dart';
 import 'package:telemoni/utils/secure_storage_service.dart';
 import 'package:telemoni/utils/themeprovider.dart';
-final GlobalKey<NavigatorState> notificationNavigatorKey =
-    GlobalKey<NavigatorState>();
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // This handler is called when the app is in the background or terminated.
-  await Firebase.initializeApp();
-  _handleNotification(message);
-}
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
-void _handleNotification(RemoteMessage message) async {
-  SecureStorageService secureStorageService = SecureStorageService();
-
-  // Check if the notification is for updating the JWT token
-  if (message.data.containsKey('new_jwt_token')) {
-    String newJwtToken = message.data['new_jwt_token'];
-    // Update the JWT token in secure storage
-    await secureStorageService.storeToken(newJwtToken);
-    print("JWT token updated from notification!");
-  }
-
-  // Check if the notification is a transactional message (e.g., withdrawal)
-  if (message.data.containsKey('transaction_type') &&
-      message.data['transaction_type'] == 'withdrawal') {
-    // Navigate to WithdrawalPage
-    // This requires a Navigator context. Use a global key for the navigator if needed.
-    notificationNavigatorKey.currentState?.push(
-      MaterialPageRoute(builder: (context) => WithdrawalPage()),
-    );
-    print("Navigated to WithdrawalPage from notification!");
-  }
-}
-
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  // Set up the background message handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // Request permission to show notifications (iOS specific)
-  NotificationSettings settings = await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+  // Initialize NotificationService
+  NotificationService notificationService = NotificationService();
+  await notificationService.initialize();
 
-  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-    print('User granted permission for notifications');
-  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-    print('User granted provisional permission for notifications');
-  } else {
-    print('User declined or has not accepted permission for notifications');
-  }
-
-  // Set up background message handler
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // Set up notification tap functionality for when the app is opened from a notification
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    _handleNotification(message);
-  });
-
-  // Check for existing JWT token to determine the initial route
+  // Check for an existing JWT token to determine the initial route
   String? jwtToken = await SecureStorageService().getToken();
 
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
-      child: MyApp(initialRoute: jwtToken == null ? '/login' : '/home'),
+      child: MyApp(
+        initialRoute: jwtToken == null ? '/login' : '/home',
+      ),
     ),
   );
 }
@@ -172,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // Function to handle OTP verification and generate FCM token after authentication
- Future<void> _verifyOTP() async {
+  Future<void> _verifyOTP() async {
     String enteredOTP = _otpController.text;
     String phoneNumber = _phoneController.text;
     print(enteredOTP);
@@ -192,16 +148,17 @@ class _LoginPageState extends State<LoginPage> {
 
           // Send FCM token and other user info to your server
           String? idToken = await userCredential.user?.getIdToken();
-          if(idToken!=null){
+          if (idToken != null) {
+            String? serverToken =
+                await apiService.verifyOTP(idToken, phoneNumber, fcmToken);
 
-          String? serverToken =
-              await apiService.verifyOTP(idToken, phoneNumber,fcmToken);
-
-          if (serverToken != null) {
-            // Store server token in secure storage and proceed
-            await secureStorageService.storeToken(serverToken);
-            Navigator.pushReplacementNamed(context, '/home');
-          }
+            if (serverToken != null) {
+              await secureStorageService.storeToken(serverToken);
+              final jwt = JWT.decode(serverToken);
+              
+              await LocalStorage.setUser(jwt.payload['role']);
+              Navigator.pushReplacementNamed(context, '/home');
+            }
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Failed to verify OTP')),
@@ -247,10 +204,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
             if (otpVisible) ...[
               const SizedBox(height: 20),
-              // Text(
-              //   'OTP: $generatedOTP',
-              //   style: const TextStyle(fontWeight: FontWeight.bold),
-              // ),
               TextField(
                 controller: _otpController,
                 keyboardType: TextInputType.number,

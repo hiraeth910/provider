@@ -24,27 +24,18 @@ class ApiService {
   final SecureStorageService secureStorageService = SecureStorageService();
   static String? _token;
 
-  static Future<void> setTokyo(String token) async {
-    _token = token; // Store token in memory
-  }
-
+  
   // Method to get the token, either from memory or secure storage if not set
   Future<String?> getTokyo() async {
     print('stoken:${ await secureStorageService.getToken()}');
     
-    if (_token != null) {
-      return _token; // Return in-memory token if already set
-    } else {
-      // Fetch from secure storage and set in memory for future use
+    
       _token = await secureStorageService.getToken();
       return _token;
-    }
+    
   }
 
-  // Method to clear the token, e.g., on logout
-  static void clearToken() {
-    _token = null; // Clear in-memory token
-  }
+ 
 
   Future<String?> generateOTP(String phoneNumber) async {
 print('otpgen');

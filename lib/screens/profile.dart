@@ -15,7 +15,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-  SecureStorageService secureStorageService = SecureStorageService();
+    SecureStorageService secureStorageService = SecureStorageService();
     // Access custom colors from ThemeProvider
     final customColors = Provider.of<ThemeProvider>(context).customColors;
 
@@ -215,7 +215,7 @@ class ProfilePage extends StatelessWidget {
                       onTap: () async {
                         LocalStorage.removeLogin();
                         secureStorageService.deleteToken();
-                        ApiService.clearToken();
+                        LocalStorage.removeUser();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

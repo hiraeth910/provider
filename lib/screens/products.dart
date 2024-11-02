@@ -241,7 +241,7 @@ class _ProductsPageState extends State<ProductsPage> {
             ? colors.customYellow
             : colors.customBlue;
       case 'active':
-        return colors.customGreen;
+        return Provider.of<ThemeProvider>(context, listen: false).isDarkMode?Colors.green[900]!: Colors.greenAccent;
       case 'inactive':
         return colors.customRed;
       default:
@@ -256,7 +256,9 @@ class _ProductsPageState extends State<ProductsPage> {
             ? colors.customYellow
             : colors.customBlue;
       case 'active':
-        return colors.customGreen;
+        return Provider.of<ThemeProvider>(context, listen: false).isDarkMode
+            ? Colors.green[900]!
+            : Colors.greenAccent;
       case 'inactive':
         return colors.customRed;
       default:

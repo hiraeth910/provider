@@ -22,4 +22,14 @@ class LocalStorage {
   static Future<void> removeLogin() async {
     await _preferences?.remove('token');
   }
+
+  static Future<void> setUser(String role) async {
+    await _preferences?.setString('user', role);
+  }
+  static Future<void> removeUser() async {
+    await _preferences?.remove('role');
+  }
+  static String? getUser() {
+    return _preferences?.getString('role');
+  }
 }
