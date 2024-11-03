@@ -2,6 +2,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorage {
   static SharedPreferences? _preferences;
+  static const _providerNameKey = 'providerName';
+  static const _userRole = 'userRole';
 
   // Initialize SharedPreferences
   static Future<void> init() async {
@@ -24,22 +26,29 @@ class LocalStorage {
   }
 
   static Future<void> setUser(String role) async {
-    await _preferences?.setString('user', role);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userRole, role);
   }
   static Future<void> removeUser() async {
     await _preferences?.remove('role');
   }
-  static String? getUser() {
-    return _preferences?.getString('role');
+  static Future<String?> getUser() async{
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userRole);
   }
 
-   static Future<void> setProviderName(String name) async {
-    await _preferences?.setString('user', name);
+  static Future<void> setProviderName(String providerName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_providerNameKey, providerName);
   }
+
+  static Future<String?> getProviderName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_providerNameKey);
+  }
+
   static Future<void> removeProviderName() async {
     await _preferences?.remove('name');
   }
-  static String? getProviderName() {
-    return _preferences?.getString('name');
-  }
+ 
 }

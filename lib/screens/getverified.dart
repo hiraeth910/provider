@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:provider/provider.dart';
+import 'package:telemoni/screens/home.dart';
 import 'package:telemoni/utils/api_service.dart';
 import 'package:telemoni/utils/localstorage.dart';
 import 'package:telemoni/utils/themeprovider.dart';
@@ -18,117 +19,104 @@ class VerificationScreen extends StatefulWidget {
 
 class _VerificationScreenState extends State<VerificationScreen> {
   final _panController = TextEditingController();
-  TextEditingController _nameController =
-      TextEditingController(); // Controller for name input
+  final TextEditingController _nameController = TextEditingController();
   final _focusNode = FocusNode();
   File? _selectedImage;
   String? _base64Image;
   bool _isFormVisible = false;
   bool _isPanValid = true;
-  String _verificationStatus = '';
+  String _verificationStatus = ''; // Starts empty
   bool _isImageRequired = false;
   String? _imageError;
   final ApiService apiService = ApiService();
 
-  // PAN format regex: 5 uppercase letters, 4 digits, and 1 uppercase letter
   final _panFormat = RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$');
 
   @override
   void initState() {
     super.initState();
-    _checkVerificationStatus(); // Check verification status on initial render
+    _checkVerificationStatus();
   }
 
   @override
   void dispose() {
     _panController.dispose();
+    _nameController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  // Function to check verification status (returns random value for demonstration)
   void _checkVerificationStatus() async {
-  final user = LocalStorage.getUser();  // Check if user is verified
-  
-  if (user == 'wallet_user') {
-    // If user is verified, set status to 'verified' and update UI
-    setState(() {
-      _verificationStatus = 'verified';
-    });
-    return;
-  }
+    final user = await LocalStorage.getUser();
+    final name = await LocalStorage.getProviderName();
 
-  try {
-    // Call the API to get verification status if not verified
-    final panStatus = await apiService.getPanVerfication();
+    if (user == 'wallet_user' && name != null && name.isNotEmpty) {
+      // Verified via local storage
+      setState(() {
+        _verificationStatus = 'verified';
+      });
+      return;
+    }
 
-    setState(() {
-      _verificationStatus = panStatus.status;
-    });
+    // If not verified, check API for updated verification status
+    try {
+      final panStatus = await apiService.getPanVerfication();
 
-    if (panStatus.status == 'pending') {
-      // Save providerName to local storage if status is pending
-      if (panStatus.providerName != null) {
-        LocalStorage.setProviderName(panStatus.providerName!);
+      if (panStatus.status == 'pending' || panStatus.status == 'verified') {
+        if (panStatus.providerName != null) {
+          await LocalStorage.setProviderName(panStatus.providerName!);
+        }
       }
-      // Navigate to pending screen
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => PendingScreen()),
-      // );
-    } else if (panStatus.status == 'not verified') {
-      setState(() {
-      _verificationStatus = 'not verified';
-    });
-    return;
-    }
-  } catch (e) {
-    // Handle any errors, e.g., display a message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error fetching verification status: $e')),
-    );
-  }
-}
-
-Future<void> _pickImage() async {
-  final picker = ImagePicker();
-  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-  if (pickedFile != null) {
-    final file = File(pickedFile.path);
-    final fileSize = await file.length(); // Get the file size in bytes
-
-    // Check if the file size is less than or equal to 1 MB (1 * 1024 * 1024 bytes)
-    if (fileSize <= 1 * 1024 * 1024) {
-      final bytes = await file.readAsBytes(); // Read file as bytes
-      final base64Image = base64Encode(bytes); // Convert to Base64
 
       setState(() {
-        _selectedImage = file; // Set the selected image (if needed for preview)
-        _base64Image = base64Image; // Store the Base64 string
-        _imageError = null; // Reset any previous error
+        _verificationStatus = panStatus.status;
       });
-    } else {
-      // Show an error message in a Snackbar if the file size is greater than 1 MB
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-              'The image size should be 1 MB or less. Please select another image.'),
-          duration: const Duration(seconds: 3), // Duration for the Snackbar
-          backgroundColor: Colors.red, // Optional: Customize background color
-        ),
+        SnackBar(content: Text('Error fetching verification status: $e')),
       );
-      // Optionally reset the selected image to null if you want to enforce re-upload
-      setState(() {
-        _selectedImage = null; // Reset the selected image
-        _base64Image = null; // Reset the Base64 string
-      });
     }
   }
-}
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-void _validateAndSubmit() async {
+    if (pickedFile != null) {
+      final file = File(pickedFile.path);
+      final fileSize = await file.length(); // Get the file size in bytes
+
+      // Check if the file size is less than or equal to 1 MB (1 * 1024 * 1024 bytes)
+      if (fileSize <= 1 * 1024 * 1024) {
+        final bytes = await file.readAsBytes(); // Read file as bytes
+        final base64Image = base64Encode(bytes); // Convert to Base64
+
+        setState(() {
+          _selectedImage =
+              file; // Set the selected image (if needed for preview)
+          _base64Image = base64Image; // Store the Base64 string
+          _imageError = null; // Reset any previous error
+        });
+      } else {
+        // Show an error message in a Snackbar if the file size is greater than 1 MB
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'The image size should be 1 MB or less. Please select another image.'),
+            duration: const Duration(seconds: 3), // Duration for the Snackbar
+            backgroundColor: Colors.red, // Optional: Customize background color
+          ),
+        );
+        // Optionally reset the selected image to null if you want to enforce re-upload
+        setState(() {
+          _selectedImage = null; // Reset the selected image
+          _base64Image = null; // Reset the Base64 string
+        });
+      }
+    }
+  }
+
+  void _validateAndSubmit() async {
     String enteredPan = _panController.text.toUpperCase();
     bool isPanValid = _panFormat.hasMatch(enteredPan);
 
@@ -143,13 +131,20 @@ void _validateAndSubmit() async {
         'image': _base64Image, // Use the Base64 image string
       };
 
-      print('Name: ${_nameController.text}, PAN: ${_panController.text}, Image (Base64): ${_base64Image}');
+      print(
+          'Name: ${_nameController.text}, PAN: ${_panController.text}, Image (Base64): ${_base64Image}');
 
       try {
-        await apiService.submitPanDetails(panData); // Use the ApiService to submit details
+        await apiService
+            .submitPanDetails(panData); // Use the ApiService to submit details
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Form Submitted Successfully!')),
         );
+        Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MainPageContent()),
+        (Route<dynamic> route) => route.isFirst, // Ensures back navigation goes to main.dart
+      );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error submitting details: $e')),
@@ -157,11 +152,11 @@ void _validateAndSubmit() async {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter a valid PAN and upload an image.')),
+        SnackBar(
+            content: Text('Please enter a valid PAN and upload an image.')),
       );
     }
   }
-
 
   int _previousLength = 0; // Track the previous input length
 
@@ -227,7 +222,7 @@ void _validateAndSubmit() async {
     });
   }
 
-  @override
+   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final customColors = themeProvider.customColors;
@@ -242,7 +237,9 @@ void _validateAndSubmit() async {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (_verificationStatus == 'verified')
+              if (_verificationStatus.isEmpty)
+                CircularProgressIndicator(color: customColors.customGrey)
+              else if (_verificationStatus == 'verified')
                 Text(
                   'You are verified',
                   style: TextStyle(

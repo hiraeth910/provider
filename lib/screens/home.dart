@@ -5,6 +5,7 @@ import 'package:telemoni/screens/getverified.dart';
 import 'package:telemoni/screens/products.dart';
 import 'package:telemoni/screens/profile.dart';
 import 'package:telemoni/utils/themeprovider.dart';
+import 'package:telemoni/utils/localstorage.dart'; // Import LocalStorage for user status check
 
 class MainPageContent extends StatefulWidget {
   const MainPageContent({super.key});
@@ -15,8 +16,8 @@ class MainPageContent extends StatefulWidget {
 
 class _MainPageContentState extends State<MainPageContent> {
   int _selectedIndex = 0;
+  bool _isVerifiedUser = false; // Variable to store verification status
 
-  // List of screens for navigation
   final List<Widget> _pages = [
     const VerificationScreen(),
     const AddProductPage(),
@@ -24,11 +25,32 @@ class _MainPageContentState extends State<MainPageContent> {
     const ProfilePage(),
   ];
 
-  // Function to handle bottom navigation bar tap
-  void _onItemTapped(int index) {
+  @override
+  void initState() {
+    super.initState();
+    _checkUserStatus(); // Check the user status on page load
+  }
+
+  // Function to check user status
+  Future<void> _checkUserStatus() async {
+    final userStatus = await LocalStorage.getUser();
     setState(() {
-      _selectedIndex = index;
+      _isVerifiedUser = userStatus == 'wallet_user'; // Set verification status
     });
+  }
+
+  // Function to handle bottom navigation bar tap with verification check
+  void _onItemTapped(int index) {
+    if (!_isVerifiedUser && index != 0) {
+      // Show message if the user is not verified and attempts to navigate
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete verification to access this page.')),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
 
   @override
@@ -75,8 +97,7 @@ class _MainPageContentState extends State<MainPageContent> {
         selectedItemColor: const Color.fromARGB(255, 111, 63, 193),
         onTap: _onItemTapped,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        unselectedItemColor:
-            iconColor, // Ensure unselected icon color matches the theme
+        unselectedItemColor: iconColor,
         selectedLabelStyle: TextStyle(color: labelColor),
         unselectedLabelStyle: TextStyle(color: labelColor),
       ),

@@ -112,14 +112,14 @@ class EarningsTrans {
 
 class Pan {
   final String status;
-  final String providerName;
+  final String? providerName;
 
   Pan({required this.providerName, required this.status});
 
   factory Pan.fromJson(Map<String, dynamic> json) {
     return Pan(
       status: json['status'],
-      providerName: json['providerName'],
+      providerName: json['providerName'] ?? '',
     );
   }
 }
