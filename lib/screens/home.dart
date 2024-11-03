@@ -7,10 +7,7 @@ import 'package:telemoni/screens/profile.dart';
 import 'package:telemoni/utils/themeprovider.dart';
 
 class MainPageContent extends StatefulWidget {
-  const MainPageContent(
-      {super.key});
-
-  
+  const MainPageContent({super.key});
 
   @override
   State<MainPageContent> createState() => _MainPageContentState();
@@ -23,8 +20,9 @@ class _MainPageContentState extends State<MainPageContent> {
   final List<Widget> _pages = [
     const VerificationScreen(),
     const AddProductPage(),
-     const ProductsPage(),
-    const ProfilePage(),  ];
+    const ProductsPage(),
+    const ProfilePage(),
+  ];
 
   // Function to handle bottom navigation bar tap
   void _onItemTapped(int index) {
@@ -46,9 +44,10 @@ class _MainPageContentState extends State<MainPageContent> {
         actions: [
           IconButton(
             icon: const Icon(Icons.brightness_6),
- onPressed: () {
-      Provider.of<ThemeProvider>(context, listen: false).toggleTheme();},
-                  tooltip: 'Toggle Theme',
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+            tooltip: 'Toggle Theme',
           ),
         ],
       ),

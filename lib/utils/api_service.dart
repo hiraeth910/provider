@@ -330,4 +330,25 @@ Future<List<EarningsTrans>> getEarningsTransactions(int id) async {
   }
 }
 
+
+Future<Pan> getPanVerfication() async {
+  try {
+    final response = await http.get(
+      Uri.parse(Endpoints.panVericationStatus),
+      headers: {
+        
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      Map<String, dynamic> jsonData = jsonDecode(response.body);
+      return Pan.fromJson(jsonData);  // Parse to Balance model
+    } else {
+      throw Exception('Failed to fetch Status');
+    }
+  } catch (e) {
+    throw Exception('Error: $e');
+  }
+}
 }

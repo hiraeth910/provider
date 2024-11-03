@@ -14,4 +14,5 @@ class Endpoints {
   static const String withdrawalHistory = '$baseUrl/api/provider/wallet/transactions/';
   static const String getWalletBalance = '$baseUrl/api/provider/get/wallet/balance';
   static const String getEarningsTransactions = '$baseUrl/api/provider/get/prouduct/sales?productId=';
+  static const String panVericationStatus = '$baseUrl/api/user/status';
 }

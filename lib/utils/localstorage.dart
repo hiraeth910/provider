@@ -32,4 +32,14 @@ class LocalStorage {
   static String? getUser() {
     return _preferences?.getString('role');
   }
+
+   static Future<void> setProviderName(String name) async {
+    await _preferences?.setString('user', name);
+  }
+  static Future<void> removeProviderName() async {
+    await _preferences?.remove('name');
+  }
+  static String? getProviderName() {
+    return _preferences?.getString('name');
+  }
 }

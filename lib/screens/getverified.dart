@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:provider/provider.dart';
 import 'package:telemoni/utils/api_service.dart';
+import 'package:telemoni/utils/localstorage.dart';
 import 'package:telemoni/utils/themeprovider.dart';
 
 class VerificationScreen extends StatefulWidget {
@@ -46,12 +47,48 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   // Function to check verification status (returns random value for demonstration)
-  void _checkVerificationStatus() {
-    final statuses = ['verified', 'pending', 'not verified'];
+  void _checkVerificationStatus() async {
+  final user = LocalStorage.getUser();  // Check if user is verified
+  
+  if (user == 'wallet_user') {
+    // If user is verified, set status to 'verified' and update UI
     setState(() {
-      _verificationStatus = statuses[Random().nextInt(statuses.length)];
+      _verificationStatus = 'verified';
     });
+    return;
   }
+
+  try {
+    // Call the API to get verification status if not verified
+    final panStatus = await apiService.getPanVerfication();
+
+    setState(() {
+      _verificationStatus = panStatus.status;
+    });
+
+    if (panStatus.status == 'pending') {
+      // Save providerName to local storage if status is pending
+      if (panStatus.providerName != null) {
+        LocalStorage.setProviderName(panStatus.providerName!);
+      }
+      // Navigate to pending screen
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => PendingScreen()),
+      // );
+    } else if (panStatus.status == 'not verified') {
+      setState(() {
+      _verificationStatus = 'not verified';
+    });
+    return;
+    }
+  } catch (e) {
+    // Handle any errors, e.g., display a message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error fetching verification status: $e')),
+    );
+  }
+}
 
 Future<void> _pickImage() async {
   final picker = ImagePicker();
