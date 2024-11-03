@@ -155,8 +155,7 @@ class _LoginPageState extends State<LoginPage> {
             if (serverToken != null) {
               await secureStorageService.storeToken(serverToken);
               final jwt = JWT.decode(serverToken);
-              
-              await LocalStorage.setUser(jwt.payload['role']);
+              await setUserRole(serverToken);
               Navigator.pushReplacementNamed(context, '/home');
             }
           } else {
