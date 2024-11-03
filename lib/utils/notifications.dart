@@ -1,9 +1,11 @@
 // notification_service.dart
 
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:telemoni/screens/wallet.dart';
+import 'package:telemoni/utils/localstorage.dart';
 import 'secure_storage_service.dart';
 
 final GlobalKey<NavigatorState> notificationNavigatorKey =
@@ -44,6 +46,7 @@ class NotificationService {
     if (message.data.containsKey('new_jwt_token')) {
       String newJwtToken = message.data['new_jwt_token'];
       await _secureStorageService.storeToken(newJwtToken);
+      await setUserRole(newJwtToken);
       print("JWT token updated from notification!");
     }
 
@@ -62,4 +65,10 @@ class NotificationService {
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   NotificationService()._handleNotification(message);
+}
+
+Future<void> setUserRole(String token) async {
+  final jwt = JWT.decode(token);
+
+  await LocalStorage.setUser(jwt.payload['role']);
 }
