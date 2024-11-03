@@ -24,23 +24,18 @@ class ApiService {
   final SecureStorageService secureStorageService = SecureStorageService();
   static String? _token;
 
-  
   // Method to get the token, either from memory or secure storage if not set
   Future<String?> getTokyo() async {
-    print('stoken:${ await secureStorageService.getToken()}');
-    
-    
-      _token = await secureStorageService.getToken();
-      return _token;
-    
+    print('stoken:${await secureStorageService.getToken()}');
+
+    _token = await secureStorageService.getToken();
+    return _token;
   }
 
- 
-
   Future<String?> generateOTP(String phoneNumber) async {
-print('otpgen');
-String? token = await getTokyo(); 
-print('token:$token');
+    print('otpgen');
+    String? token = await getTokyo();
+    print('token:$token');
     final response = await _client.post(
       Uri.parse(Endpoints.generateOTP), // Use baseUrl here
 
@@ -53,24 +48,20 @@ print('token:$token');
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      return data['otp']; // Adjust according to your API response
+      // return data['otp']; // Adjust according to your API response
     } else {
       throw Exception('Failed to generate OTP');
     }
   }
 
   Future<String?> verifyOTP(
-      String idToken, String phone,String fcmtoken) async {
+      String idToken, String phone, String fcmtoken) async {
     final response = await _client.post(
       Uri.parse(Endpoints.verifyOtp),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: json.encode({
-        'idToken': idToken,
-        'phone': phone,
-        'fcm':fcmtoken
-      }),
+      body: json.encode({'idToken': idToken, 'phone': phone, 'fcm': fcmtoken}),
     );
     //print(json.encode({'number': phoneNumber, 'otp': otp}),);
     print(response.body);
@@ -132,31 +123,30 @@ print('token:$token');
   }
 
   Future<http.Response> createProduct(Map<String, dynamic> create) async {
-  String? token = await getTokyo(); // Get token from memory or secure storage
-  if (token == null) {
-    throw Exception('Token is null. Please login again.');
+    String? token = await getTokyo(); // Get token from memory or secure storage
+    if (token == null) {
+      throw Exception('Token is null. Please login again.');
+    }
+
+    final response = await _client.post(
+      Uri.parse(Endpoints.createProduct),
+      headers: {
+        'authorization': token,
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(create),
+    );
+
+    print(json.encode(create));
+
+    if (response.statusCode == 201) {
+      print('Details submitted successfully');
+    } else {
+      print('Failed to submit details: ${response.body}');
+    }
+
+    return response; // Return the response
   }
-
-  final response = await _client.post(
-    Uri.parse(Endpoints.createProduct),
-    headers: {
-      'authorization': token,
-      'Content-Type': 'application/json',
-    },
-    body: json.encode(create),
-  );
-
-  print(json.encode(create));
-
-  if (response.statusCode == 201) {
-    print('Details submitted successfully');
-  } else {
-    print('Failed to submit details: ${response.body}');
-  }
-
-  return response; // Return the response
-}
-
 
   Future<List<BankDetails>> getBankAccounts() async {
     String? token = await getTokyo(); // Get token from memory or secure storage
@@ -187,7 +177,7 @@ print('token:$token');
       throw Exception('Token is null. Please login again.');
     }
     final response = await _client.get(
-    Uri.parse('${Endpoints.getProducts}$id'),
+      Uri.parse('${Endpoints.getProducts}$id'),
       headers: {
         'authorization': token,
         'Content-Type': 'application/json',
@@ -225,7 +215,7 @@ print('token:$token');
   }
 
   Future<void> raiseWithdrawal(Map<String, dynamic> request) async {
-     String? token = await getTokyo(); // Get token from memory or secure storage
+    String? token = await getTokyo(); // Get token from memory or secure storage
     if (token == null) {
       throw Exception('Token is null. Please login again.');
     }
@@ -236,18 +226,17 @@ print('token:$token');
           "Content-Type": "application/json",
           'authorization': token,
         },
-        body: json.encode(
-          request
-          // "bank_id": bankId,
-          // "amount": amount,
-        ),
+        body: json.encode(request
+            // "bank_id": bankId,
+            // "amount": amount,
+            ),
       );
       print(json.encode(request));
       if (response.statusCode == 201) {
-      print('Details submitted successfully');
-    } else {
-      print('Failed to submit details: ${response.body}');
-    }
+        print('Details submitted successfully');
+      } else {
+        print('Failed to submit details: ${response.body}');
+      }
     } catch (e) {
       throw Exception('Error: $e');
     }
@@ -255,79 +244,102 @@ print('token:$token');
 
   // Withdrawal history API
   Future<List<Transaction>> getWithdrawalHistory(int id) async {
-  String? token = await getTokyo(); // Get token from memory or secure storage
-  if (token == null) {
-    throw Exception('Token is null. Please login again.');
-  }
-  try {
-    final response = await http.get(
-      Uri.parse('${Endpoints.withdrawalHistory}$id'),
-      headers: {
-        'authorization': token,
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      List<dynamic> jsonData = jsonDecode(response.body);
-      return jsonData.map((item) => Transaction.fromJson(item)).toList();
-    } else {
-      throw Exception('Failed to fetch withdrawal history');
+    String? token = await getTokyo(); // Get token from memory or secure storage
+    if (token == null) {
+      throw Exception('Token is null. Please login again.');
     }
-  } catch (e) {
-    throw Exception('Error: $e');
-  }
-}
+    try {
+      final response = await http.get(
+        Uri.parse('${Endpoints.withdrawalHistory}$id'),
+        headers: {
+          'authorization': token,
+          'Content-Type': 'application/json',
+        },
+      );
 
-
-Future<Balance> getBalance() async {
-  String? token = await getTokyo();
-  if (token == null) {
-    throw Exception('Token is null. Please login again.');
-  }
-  try {
-    final response = await http.get(
-      Uri.parse(Endpoints.getWalletBalance),
-      headers: {
-        'authorization': token,
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      Map<String, dynamic> jsonData = jsonDecode(response.body);
-      return Balance.fromJson(jsonData);  // Parse to Balance model
-    } else {
-      throw Exception('Failed to fetch balance');
+      if (response.statusCode == 200) {
+        List<dynamic> jsonData = jsonDecode(response.body);
+        return jsonData.map((item) => Transaction.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to fetch withdrawal history');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
     }
-  } catch (e) {
-    throw Exception('Error: $e');
   }
-}
 
-Future<List<EarningsTrans>> getEarningsTransactions(int id) async {
-  String? token = await getTokyo(); // Get token from memory or secure storage
-  if (token == null) {
-    throw Exception('Token is null. Please login again.');
-  }
-  try {
-    final response = await http.get(
-      Uri.parse('${Endpoints.getEarningsTransactions}$id'),
-      headers: {
-        'authorization': token,
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      List<dynamic> jsonData = jsonDecode(response.body);
-      return jsonData.map((item) => EarningsTrans.fromJson(item)).toList();
-    } else {
-      throw Exception('Failed to fetch withdrawal history');
+  Future<Balance> getBalance() async {
+    String? token = await getTokyo();
+    if (token == null) {
+      throw Exception('Token is null. Please login again.');
     }
-  } catch (e) {
-    throw Exception('Error: $e');
-  }
-}
+    try {
+      final response = await http.get(
+        Uri.parse(Endpoints.getWalletBalance),
+        headers: {
+          'authorization': token,
+          'Content-Type': 'application/json',
+        },
+      );
 
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonData = jsonDecode(response.body);
+        return Balance.fromJson(jsonData); // Parse to Balance model
+      } else {
+        throw Exception('Failed to fetch balance');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<List<EarningsTrans>> getEarningsTransactions(int id) async {
+    String? token = await getTokyo(); // Get token from memory or secure storage
+    if (token == null) {
+      throw Exception('Token is null. Please login again.');
+    }
+    try {
+      final response = await http.get(
+        Uri.parse('${Endpoints.getEarningsTransactions}$id'),
+        headers: {
+          'authorization': token,
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonData = jsonDecode(response.body);
+        return jsonData.map((item) => EarningsTrans.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to fetch withdrawal history');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<Pan> getPanVerfication() async {
+    String? token = await getTokyo(); // Get token from memory or secure storage
+    if (token == null) {
+      throw Exception('Token is null. Please login again.');
+    }
+    try {
+      final response = await http.get(
+        Uri.parse(Endpoints.panVericationStatus),
+        headers: {
+          'authorization': token,
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonData = jsonDecode(response.body);
+        return Pan.fromJson(jsonData); // Parse to Balance model
+      } else {
+        throw Exception('Failed to fetch Status');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
 }

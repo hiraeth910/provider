@@ -9,8 +9,29 @@ import 'package:telemoni/utils/localstorage.dart';
 import 'package:telemoni/utils/secure_storage_service.dart';
 import 'package:telemoni/utils/themeprovider.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({Key? key}) : super(key: key);
+
+  @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String name = 'user'; // Default name
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProviderName();
+  }
+
+  Future<void> _loadProviderName() async {
+    String? savedName = await LocalStorage.getProviderName();
+    setState(() {
+      name = savedName ?? 'user'; // Fallback to 'user' if no name is saved
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +45,7 @@ class ProfilePage extends StatelessWidget {
     double avatarRadius = screenWidth * 0.08;
     double fontSize = screenWidth * 0.045;
     double cardElevation = screenWidth * 0.01;
+
 
     return SingleChildScrollView(
       child: Padding(
@@ -48,7 +70,7 @@ class ProfilePage extends StatelessWidget {
                     ),
                     SizedBox(width: paddingScale),
                     Text(
-                      'Hello, Ranku',
+                      'Hello, $name',
                       style: TextStyle(
                         fontSize: fontSize,
                         fontWeight: FontWeight.bold,
