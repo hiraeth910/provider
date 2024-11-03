@@ -4,12 +4,15 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:telemoni/screens/wallet.dart';
 import 'package:telemoni/utils/localstorage.dart';
 import 'secure_storage_service.dart';
 
 final GlobalKey<NavigatorState> notificationNavigatorKey =
     GlobalKey<NavigatorState>();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 class NotificationService {
   static final FirebaseMessaging _firebaseMessaging =
@@ -18,7 +21,14 @@ class NotificationService {
 
   // Initialize notification settings and listeners
   Future<void> initialize() async {
-    // Request permission for iOS notifications
+    // Initialize FlutterLocalNotificationsPlugin
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+    // Request permission for notifications (only needs to be done once)
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
@@ -34,14 +44,40 @@ class NotificationService {
       print('User declined or has not accepted permission for notifications');
     }
 
-    // Handle notifications when app is in the foreground
-    FirebaseMessaging.onMessage.listen(_handleNotification);
+    // Set foreground notification presentation options
+    await _firebaseMessaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
 
-    // Handle notification taps when the app is in the background
+    // Listen to foreground and background messages
+    FirebaseMessaging.onMessage.listen(_handleNotification);
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotification);
   }
 
   Future<void> _handleNotification(RemoteMessage message) async {
+    // Show local notification for foreground messages
+    if (message.notification != null) {
+      const AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+        'your_channel_id', // Replace with a unique channel ID
+        'General Notifications', // Channel name for settings
+        channelDescription: 'This channel is used for general notifications',
+        importance: Importance.max,
+        priority: Priority.high,
+      );
+      const NotificationDetails platformChannelSpecifics =
+          NotificationDetails(android: androidPlatformChannelSpecifics);
+
+      await flutterLocalNotificationsPlugin.show(
+        0, // Notification ID
+        message.notification?.title,
+        message.notification?.body,
+        platformChannelSpecifics,
+      );
+    }
+
     // Handle JWT token update
     if (message.data.containsKey('new_jwt_token')) {
       String newJwtToken = message.data['new_jwt_token'];
