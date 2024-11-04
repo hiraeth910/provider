@@ -107,4 +107,5 @@ Future<void> setUserRole(String token) async {
   final jwt = JWT.decode(token);
 
   await LocalStorage.setUser(jwt.payload['role']);
+    print(await LocalStorage.getUser());
 }

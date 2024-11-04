@@ -11,72 +11,77 @@ class AboutProductWidget extends StatelessWidget {
   const AboutProductWidget({super.key, required this.product});
 
   @override
-Widget build(BuildContext context) {
-  final themeProvider = Provider.of<ThemeProvider>(context);
-  final customColors = themeProvider.customColors;
+  Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final customColors = themeProvider.customColors;
 
-  return DefaultTabController(
-    length: 2, // Number of tabs
-    child: Scaffold(
-      appBar: AppBar(
-        title: Text(
-          product.name,
-          style: TextStyle(color: customColors.textColor),
+    return DefaultTabController(
+      length: 2, // Number of tabs
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            product.name,
+            style: TextStyle(color: customColors.textColor),
+          ),
+          // actions: [
+          //   IconButton(
+          //     icon: Icon(Icons.edit, color: customColors.textColor),
+          //     onPressed: () {
+          //       // Add your edit functionality here
+          //     },
+          //   ),
+          // ],
+          backgroundColor: Theme.of(context)
+              .colorScheme
+              .inversePrimary, // Using the seed color from ThemeData
         ),
-        // actions: [
-        //   IconButton(
-        //     icon: Icon(Icons.edit, color: customColors.textColor),
-        //     onPressed: () {
-        //       // Add your edit functionality here
-        //     },
-        //   ),
-        // ],
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary, // Using the seed color from ThemeData
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: TabBarView(
-              children: [
-                _buildAboutSection(context),
-                // Conditional rendering for the dashboard based on product status
-                if (product.status == 'active')
-                  _buildDashboardSection(context)
-                else if (product.status == 'inactive')
-                  _buildInactiveSection(context,)
-                else
-                  Center(child: Text('Dashboard not available')),
-              ],
+        body: Column(
+          children: [
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildAboutSection(context),
+                  // Conditional rendering for the dashboard based on product status
+                  if (product.status == 'active')
+                    _buildDashboardSection(context)
+                  else if (product.status == 'inactive')
+                    _buildInactiveSection(
+                      context,
+                    )
+                  else
+                    Center(child: Text('Dashboard not available')),
+                ],
+              ),
             ),
-          ),
-          Material(
-            color: Theme.of(context).colorScheme.inversePrimary,
-            child: TabBar(
-              labelColor: customColors.textColor,
-              unselectedLabelColor: customColors.textColor.withOpacity(0.6),
-              tabs: const [
-                Tab(text: "About"),
-                Tab(text: "Dashboard"),
-              ],
+            Material(
+              color: Theme.of(context).colorScheme.inversePrimary,
+              child: TabBar(
+                labelColor: customColors.textColor,
+                unselectedLabelColor: customColors.textColor.withOpacity(0.6),
+                tabs: const [
+                  Tab(text: "About"),
+                  Tab(text: "Dashboard"),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget _buildInactiveSection(BuildContext context) {
-  return Center(
-    child: Text(
-      'This product is no longer available.',
-      style: TextStyle(
-        //color: customColors.textColor,
-        fontSize: MediaQuery.of(context).size.width * 0.05,
+  Widget _buildInactiveSection(BuildContext context) {
+    return Center(
+      child: Text(
+        'This product is no longer available.',
+        style: TextStyle(
+          //color: customColors.textColor,
+          fontSize: MediaQuery.of(context).size.width * 0.05,
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
   Widget _buildAboutSection(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final customColors = themeProvider.customColors;
@@ -180,7 +185,7 @@ Widget _buildInactiveSection(BuildContext context) {
               Divider(color: customColors.textColor), // Separator line
 
               // Price Section
-              _buildPriceRow(context, product.price , customColors),
+              _buildPriceRow(context, product.price, customColors),
               Divider(color: customColors.textColor),
             ],
           ),
@@ -318,6 +323,7 @@ Widget _buildInactiveSection(BuildContext context) {
     final customColors = themeProvider.customColors;
     final darkmode = themeProvider.isDarkMode;
     final String shareableLink = "telemoni.in/b/${product.link ?? 'link'}";
+    final String joiningLink = product.joiningLink ?? 'link';
     final String typeDisplayText;
 
     // Determine type and channel info
@@ -400,12 +406,12 @@ Widget _buildInactiveSection(BuildContext context) {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.pinkAccent, // Base color of the card
+                color: Color.fromARGB(255, 83, 176, 202), // Base color of the card
                 borderRadius: BorderRadius.circular(8),
               ),
               width: double.infinity,
               height:
-                  MediaQuery.of(context).size.height * 0.2, // Adjust as needed
+                  MediaQuery.of(context).size.height * 0.25, // Adjust as needed
             ),
             // Gradient layer over the orange background
             Container(
@@ -458,8 +464,29 @@ Widget _buildInactiveSection(BuildContext context) {
                         ),
                       ),
                       SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.02),
+                      Container(
+                        color: themeProvider.isDarkMode
+                            ? Color.fromARGB(255, 188, 174, 174)
+                            : Colors.orange[
+                                100], // Light shade of orange for the link background
+                        width: double.infinity,
+                        padding: EdgeInsets.all(
+                            MediaQuery.of(context).size.width * 0.03),
+                        child: Text(
+                          joiningLink,
+                          style: TextStyle(
+                            color: themeProvider.isDarkMode
+                                ? Colors.white
+                                : customColors.textColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: MediaQuery.of(context).size.width * 0.04,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      SizedBox(
                           height: MediaQuery.of(context).size.height * 0.04),
-                      // Second row for buttons (Copy and Share)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -526,7 +553,8 @@ Widget _buildInactiveSection(BuildContext context) {
               MediaQuery.of(context).size.height * 0.02),
           child: Card(
             color: themeProvider.isDarkMode
-                            ? Colors.red[900]! : Colors.redAccent, // Red color for subscribers card
+                ? Color.fromARGB(255, 16, 62, 114)!
+                : Color.fromARGB(255, 46, 185, 116), // Red color for subscribers card
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                   MediaQuery.of(context).size.width * 0.04,
@@ -564,7 +592,8 @@ Widget _buildInactiveSection(BuildContext context) {
               horizontal: MediaQuery.of(context).size.width * 0.04),
           child: Card(
             color: themeProvider.isDarkMode
-                ? Colors.green[900]!: Colors.greenAccent, // Green color for earnings card
+                ? Colors.green[900]!
+                : Colors.greenAccent, // Green color for earnings card
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                   MediaQuery.of(context).size.width * 0.04,

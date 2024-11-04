@@ -26,7 +26,6 @@ class ApiService {
 
   // Method to get the token, either from memory or secure storage if not set
   Future<String?> getTokyo() async {
-    print('stoken:${await secureStorageService.getToken()}');
 
     _token = await secureStorageService.getToken();
     return _token;

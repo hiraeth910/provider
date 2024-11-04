@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -5,9 +7,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:provider/provider.dart';
+import 'package:telemoni/main.dart';
 import 'package:telemoni/screens/home.dart';
 import 'package:telemoni/utils/api_service.dart';
 import 'package:telemoni/utils/localstorage.dart';
+import 'package:telemoni/utils/secure_storage_service.dart';
 import 'package:telemoni/utils/themeprovider.dart';
 
 class VerificationScreen extends StatefulWidget {
@@ -29,8 +33,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
   bool _isImageRequired = false;
   String? _imageError;
   final ApiService apiService = ApiService();
-
+  final SecureStorageService secureStorageService = SecureStorageService();
   final _panFormat = RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$');
+  Timer? _userCheckTimer;
 
   @override
   void initState() {
@@ -43,22 +48,43 @@ class _VerificationScreenState extends State<VerificationScreen> {
     _panController.dispose();
     _nameController.dispose();
     _focusNode.dispose();
+    _userCheckTimer?.cancel();
     super.dispose();
   }
 
   void _checkVerificationStatus() async {
+    // Initial check for user status and verification
+    await _verifyUserStatus();
+
+    // If the user is 'provider_user', start a periodic timer to check status every 5 seconds
+    _userCheckTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      final user = await LocalStorage.getUser();
+      if (user == 'wallet_user') {
+        // If user has changed to 'wallet_user', cancel the timer and update verification status
+        timer.cancel();
+        setState(() {
+          _verificationStatus = 'verified';
+        });
+      } else {
+        // If still 'provider_user', continue checking verification status from API
+        await _verifyUserStatus();
+      }
+    });
+  }
+
+  Future<void> _verifyUserStatus() async {
     final user = await LocalStorage.getUser();
     final name = await LocalStorage.getProviderName();
 
     if (user == 'wallet_user' && name != null && name.isNotEmpty) {
-      // Verified via local storage
+      // Verified locally as 'wallet_user'
       setState(() {
         _verificationStatus = 'verified';
       });
       return;
     }
 
-    // If not verified, check API for updated verification status
+    // If not locally verified, check verification status via API
     try {
       final panStatus = await apiService.getPanVerfication();
 
@@ -66,6 +92,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         if (panStatus.providerName != null) {
           await LocalStorage.setProviderName(panStatus.providerName!);
         }
+        // Print token for debugging
       }
 
       setState(() {
@@ -141,10 +168,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
           SnackBar(content: Text('Form Submitted Successfully!')),
         );
         Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const MainPageContent()),
-        (Route<dynamic> route) => route.isFirst, // Ensures back navigation goes to main.dart
-      );
+          context,
+          MaterialPageRoute(builder: (context) => const MainPageContent()),
+          (Route<dynamic> route) =>
+              route.isFirst, // Ensures back navigation goes to main.dart
+        );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error submitting details: $e')),
@@ -222,7 +250,19 @@ class _VerificationScreenState extends State<VerificationScreen> {
     });
   }
 
-   @override
+  Future<void> _logout() async {
+    LocalStorage.removeLogin();
+    secureStorageService.deleteToken();
+    LocalStorage.removeUser();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginPage(),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final customColors = themeProvider.customColors;
@@ -264,6 +304,43 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         fontSize: 18,
                       ),
                       textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    // Button to print token
+                    ElevatedButton(
+                      onPressed: () async {
+                        bool? confirmLogout = await showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Confirm Logout'),
+                              content: const Text(
+                                  'Are you sure you want to logout?'),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: const Text('No'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop(
+                                        false); // Close dialog and return false
+                                  },
+                                ),
+                                TextButton(
+                                  child: const Text('Yes'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop(
+                                        true); // Close dialog and return true
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+
+                        if (confirmLogout == true) {
+                          await _logout(); // Call the logout function if user confirms
+                        }
+                      },
+                      child: const Text('Logout'),
                     ),
                   ],
                 )

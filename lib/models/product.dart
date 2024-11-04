@@ -10,6 +10,7 @@ class Product {
   final String name;
   final String? link;
   final int price;
+  final String? joiningLink;
   Product(
       {required this.productId,
       required this.about,
@@ -20,6 +21,7 @@ class Product {
       required this.price,
       this.channel,
       this.link,
+      this.joiningLink, 
       required this.name});
 
   // Factory method to create a Product object from JSON data
@@ -34,7 +36,8 @@ class Product {
         channel: json['channel'],
         link: json['link'],
         price: json['price'],
-        name: json['name']);
+        name: json['name'],
+        joiningLink: json['joininglink']);
   }
 
   // Method to convert a Product object to JSON data
