@@ -32,7 +32,6 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -45,7 +44,6 @@ class _ProfilePageState extends State<ProfilePage> {
     double avatarRadius = screenWidth * 0.08;
     double fontSize = screenWidth * 0.045;
     double cardElevation = screenWidth * 0.01;
-
 
     return SingleChildScrollView(
       child: Padding(
@@ -235,15 +233,45 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       onTap: () async {
-                        LocalStorage.removeLogin();
-                        secureStorageService.deleteToken();
-                        LocalStorage.removeUser();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginPage(),
-                          ),
+                        bool? confirmLogout = await showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Confirm Logout'),
+                              content: const Text(
+                                  'Are you sure you want to logout?'),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: const Text('No'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop(
+                                        false); // Close dialog and return false
+                                  },
+                                ),
+                                TextButton(
+                                  child: const Text('Yes'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop(
+                                        true); // Close dialog and return true
+                                  },
+                                ),
+                              ],
+                            );
+                          },
                         );
+
+                        if (confirmLogout == true) {
+                          // Perform logout actions if user confirms
+                          LocalStorage.removeLogin();
+                          secureStorageService.deleteToken();
+                          LocalStorage.removeUser();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginPage(),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ],

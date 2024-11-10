@@ -186,7 +186,7 @@ Widget build(BuildContext context) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                   content: Text(
-                                      'Failed to delete bank account: ${response.message}')),
+                                      '${response.message}')),
                             );
                             setState(() {
                               _fetchBankAccounts();

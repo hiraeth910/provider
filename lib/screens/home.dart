@@ -4,6 +4,7 @@ import 'package:telemoni/screens/addproduct.dart';
 import 'package:telemoni/screens/getverified.dart';
 import 'package:telemoni/screens/products.dart';
 import 'package:telemoni/screens/profile.dart';
+import 'package:telemoni/utils/secure_storage_service.dart';
 import 'package:telemoni/utils/themeprovider.dart';
 import 'package:telemoni/utils/localstorage.dart'; // Import LocalStorage for user status check
 
@@ -24,11 +25,13 @@ class _MainPageContentState extends State<MainPageContent> {
     const ProductsPage(),
     const ProfilePage(),
   ];
+  final SecureStorageService secureStorageService = SecureStorageService();
 
   @override
   void initState() {
     super.initState();
     _checkUserStatus(); // Check the user status on page load
+    print(secureStorageService.getToken());
   }
 
   // Function to check user status
@@ -40,12 +43,19 @@ class _MainPageContentState extends State<MainPageContent> {
   }
 
   // Function to handle bottom navigation bar tap with verification check
-  void _onItemTapped(int index) {
+  void _onItemTapped(int index) async {
     if (!_isVerifiedUser && index != 0) {
       // Show message if the user is not verified and attempts to navigate
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please complete verification to access this page.')),
-      );
+      final Status = await LocalStorage.getUser();
+      if (Status == 'wallet_user') {
+        setState(() {
+          _selectedIndex = index;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please complete verification to access this page.')),
+        );
+      }
     } else {
       setState(() {
         _selectedIndex = index;
