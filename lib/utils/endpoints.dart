@@ -1,5 +1,5 @@
 class Endpoints {
-  static const String baseUrl = 'http://13.201.168.52';
+  static const String baseUrl = 'http://13.233.142.100';
     // static const String baseUrl = 'http://192.168.31.198';
 
   static const String generateOTP = '$baseUrl/api/auth/user/otpgen';

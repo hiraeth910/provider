@@ -10,6 +10,7 @@ class Product {
   final String name;
   final String? link;
   final int price;
+  final String? joininglink;
   Product(
       {required this.productId,
       required this.about,
@@ -20,6 +21,7 @@ class Product {
       required this.price,
       this.channel,
       this.link,
+      this.joininglink,
       required this.name});
 
   // Factory method to create a Product object from JSON data
@@ -34,6 +36,7 @@ class Product {
         channel: json['channel'],
         link: json['link'],
         price: json['price'],
+        joininglink: json['joininglink'],
         name: json['name']);
   }
 
@@ -57,7 +60,6 @@ List<Product> parseProductsList(List<dynamic> jsonList) {
   return jsonList.map((json) => Product.fromJson(json)).toList();
 }
 
-
 class ResponseModel {
   final bool success;
   final String message;
@@ -71,4 +73,3 @@ class ResponseModel {
     );
   }
 }
-
