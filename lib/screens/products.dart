@@ -10,6 +10,7 @@ class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _ProductsPageState createState() => _ProductsPageState();
 }
 
@@ -115,7 +116,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final product = products[index];
+                final   product = products[index];
                 final backgroundColor = getRandomColor(colors);
                 return GestureDetector(
                   onTap: () => onCardTap(product),

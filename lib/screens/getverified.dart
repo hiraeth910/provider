@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:provider/provider.dart';
 import 'package:telemoni/main.dart';
 import 'package:telemoni/screens/home.dart';
@@ -32,6 +31,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
   String _verificationStatus = ''; // Starts empty
   bool _isImageRequired = false;
   String? _imageError;
+  bool buttonLoad = false;
+
   final ApiService apiService = ApiService();
   final SecureStorageService secureStorageService = SecureStorageService();
   final _panFormat = RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$');
@@ -114,7 +115,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
       final fileSize = await file.length(); // Get the file size in bytes
 
       // Check if the file size is less than or equal to 1 MB (1 * 1024 * 1024 bytes)
-      if (fileSize <= 1 * 1024 * 1024) {
+      if (fileSize <= 2 * 1024 * 1024) {
         final bytes = await file.readAsBytes(); // Read file as bytes
         final base64Image = base64Encode(bytes); // Convert to Base64
 
@@ -127,10 +128,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
       } else {
         // Show an error message in a Snackbar if the file size is greater than 1 MB
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-                'The image size should be 1 MB or less. Please select another image.'),
-            duration: const Duration(seconds: 3), // Duration for the Snackbar
+          const SnackBar(
+            content: Text(
+                'The image size should be 2 MB or less. Please select another image.'),
+            duration: Duration(seconds: 3), // Duration for the Snackbar
             backgroundColor: Colors.red, // Optional: Customize background color
           ),
         );
@@ -164,10 +165,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
       try {
         await apiService
             .submitPanDetails(panData); // Use the ApiService to submit details
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Form Submitted Successfully!')),
+          const SnackBar(content: Text('Form Submitted Successfully!')),
         );
         Navigator.pushAndRemoveUntil(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(builder: (context) => const MainPageContent()),
           (Route<dynamic> route) =>
@@ -472,6 +475,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         if (_isFormVisible) {
                           _validateAndSubmit();
                           setState(() {
+                            buttonLoad = true;
                             _isImageRequired = _selectedImage ==
                                 null; // Show error if image is not selected
                           });
@@ -494,10 +498,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           vertical: mediaQuery.size.height * 0.016,
                         ),
                       ),
-                      child: Text(
-                        _isFormVisible ? 'Submit' : 'Get Verified',
-                        style: TextStyle(color: customColors.textColor),
-                      ),
+                      child: _isFormVisible
+                          ? (buttonLoad
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white)
+                              : const Text('Submit'))
+                          : const Text('Get Verified'),
+
                     ),
                   ],
                 ),

@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -5,11 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:telemoni/screens/home.dart';
 import 'package:telemoni/utils/api_service.dart';
-import 'package:telemoni/utils/localstorage.dart';
 import 'package:telemoni/utils/notifications.dart';
 import 'package:telemoni/utils/secure_storage_service.dart';
 import 'package:telemoni/utils/themeprovider.dart';
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,12 +78,14 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _otpController = TextEditingController();
   String? generatedOTP;
   bool otpVisible = false;
+  bool buttonLoad = false;
   final ApiService apiService = ApiService();
   final SecureStorageService secureStorageService = SecureStorageService();
   var verify = '';
 
   // Function to generate a random OTP
   void _handleLogin() async {
+    setState(() => buttonLoad = true); // Start loader
     String phoneNumber = '+91' + _phoneController.text;
 
     if (phoneNumber.isNotEmpty) {
@@ -101,16 +103,15 @@ class _LoginPageState extends State<LoginPage> {
           },
           codeSent: (verificationId, forceResendingToken) {
             verify = verificationId;
+            setState(() {
+              otpVisible = true;
+            });
           },
           codeAutoRetrievalTimeout: (verificationId) {
             print('Auto-retrieval timeout');
           },
           phoneNumber: phoneNumber,
         );
-
-        setState(() {
-          otpVisible = true;
-        });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('OTP sent to your phone')),
@@ -125,28 +126,25 @@ class _LoginPageState extends State<LoginPage> {
         const SnackBar(content: Text('Please enter a valid phone number')),
       );
     }
+    setState(() => buttonLoad = false); // Stop loader
   }
 
-  // Function to handle OTP verification and generate FCM token after authentication
+// Function to handle OTP verification with loader
   Future<void> _verifyOTP() async {
+    setState(() => buttonLoad = true); // Start loader
     String enteredOTP = _otpController.text;
     String phoneNumber = _phoneController.text;
-    print(enteredOTP);
 
     if (enteredOTP.isNotEmpty && phoneNumber.isNotEmpty) {
       try {
-        // Verify OTP and get UserCredential
         final cred = PhoneAuthProvider.credential(
             verificationId: verify, smsCode: enteredOTP);
         UserCredential userCredential =
             await FirebaseAuth.instance.signInWithCredential(cred);
 
-        // Generate FCM Token
         String? fcmToken = await FirebaseMessaging.instance.getToken();
         if (fcmToken != null) {
-          print("Generated FCM Token: $fcmToken");
 
-          // Send FCM token and other user info to your server
           String? idToken = await userCredential.user?.getIdToken();
           if (idToken != null) {
             String? serverToken =
@@ -154,7 +152,6 @@ class _LoginPageState extends State<LoginPage> {
 
             if (serverToken != null) {
               await secureStorageService.storeToken(serverToken);
-              final jwt = JWT.decode(serverToken);
               await setUserRole(serverToken);
               Navigator.pushReplacementNamed(context, '/home');
             }
@@ -163,11 +160,8 @@ class _LoginPageState extends State<LoginPage> {
               const SnackBar(content: Text('Failed to verify OTP')),
             );
           }
-        } else {
-          print('Failed to generate FCM Token');
-        }
+        } 
       } catch (e) {
-        print("Error: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${e.toString()}')),
         );
@@ -177,8 +171,8 @@ class _LoginPageState extends State<LoginPage> {
         const SnackBar(content: Text('Please enter the OTP')),
       );
     }
+    setState(() => buttonLoad = false); // Stop loader
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -191,16 +185,31 @@ class _LoginPageState extends State<LoginPage> {
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
+              enabled: !otpVisible, // Disable editing when OTP is visible
               decoration: const InputDecoration(
                 labelText: 'Enter phone number',
                 prefixText: '+91 ',
               ),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _handleLogin,
-              child: const Text('Generate OTP'),
-            ),
+            if (!otpVisible)
+              ElevatedButton(
+                onPressed:
+                    buttonLoad ? null : _handleLogin, // Disable if loading
+                child: buttonLoad
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Generate OTP'),
+              )
+            else
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    otpVisible = false;
+                    _phoneController.text = ''; // Clear phone number if needed
+                  });
+                },
+                child: const Text('Edit Number'),
+              ),
             if (otpVisible) ...[
               const SizedBox(height: 20),
               TextField(
@@ -210,8 +219,10 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _verifyOTP,
-                child: const Text('Verify OTP and Login'),
+                onPressed: buttonLoad ? null : _verifyOTP,
+                child: buttonLoad
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Verify OTP and Login'),
               ),
             ],
           ],

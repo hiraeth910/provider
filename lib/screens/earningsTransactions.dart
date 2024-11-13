@@ -88,7 +88,9 @@ class _EarningsTransactionsState extends State<EarningsTransactions> {
                                   'Buyer: ${transaction.buyerName}',
                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
-                                Text('Amount: \$${transaction.amount}'),
+                              Text(
+                                    'Amount: \$${(transaction.amount * 0.91).round()}'),
+
                                 Text('Purchased on: ${transaction.purchaseTime}'),
                               ],
                             ),

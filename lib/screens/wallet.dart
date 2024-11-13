@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:telemoni/models/bank.dart';
 import 'package:telemoni/models/transaction.dart';
+import 'package:telemoni/screens/banking.dart';
 import 'package:telemoni/utils/api_service.dart';
 import 'package:telemoni/utils/themeprovider.dart';
 
@@ -14,7 +15,7 @@ class WithdrawalPage extends StatefulWidget {
 }
 
 class _WithdrawalPageState extends State<WithdrawalPage> {
-  double? balance;
+  int? balance;
   bool req = false; // Determines if the withdraw button is active
   bool showTransactions = false;
   List<Transaction> transactions = [];
@@ -43,7 +44,7 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
     try {
       Balance balanceData = await apiService.getBalance();
       setState(() {
-        balance = balanceData.balance;
+       balance = balanceData.balance.round();
         req = balanceData.req;
       });
     } catch (e) {
@@ -253,9 +254,12 @@ void refreshTransactions() {
                   );
                 } else {
                   // Show form dialog if no pending transaction and balance is sufficient
-                  showDialog(
+             showDialog(
                     context: context,
                     builder: (BuildContext context) {
+                      bool noBankAccounts =
+                          false; // Variable to track if no bank accounts are available
+
                       return AlertDialog(
                         title: const Text('Complete the Form'),
                         content: FutureBuilder<List<BankDetails>>(
@@ -269,8 +273,13 @@ void refreshTransactions() {
                               return Text('Error: ${snapshot.error}');
                             } else if (!snapshot.hasData ||
                                 snapshot.data!.isEmpty) {
-                              return const Text('No bank accounts available.');
+                              noBankAccounts =
+                                  true; // Set to true if no bank accounts are found
+                              return const Text(
+                                  'No bank accounts available. Please add a bank account to proceed.');
                             } else {
+                              noBankAccounts =
+                                  false; // Reset if bank accounts are available
                               final bankAccounts = snapshot.data!;
                               return StatefulBuilder(
                                 builder: (context, setState) {
@@ -371,14 +380,33 @@ void refreshTransactions() {
                         ),
                         actions: [
                           TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(); // Close the dialog
+                            },
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(); // Close the dialog
+                              if (noBankAccounts) {
+                                // If no bank accounts, navigate to Banking widget
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const Banking()),
+                                );
+                              } else {
+                                // Otherwise, trigger the withdrawal
+                                raiseWithdrawal();
+                              }
+                            },
                             child: const Text('Done'),
-                            onPressed: raiseWithdrawal,
                           ),
                         ],
                       );
                     },
                   );
-                }
+ }
               },
               child: Text(
                 'Raise Withdrawal',

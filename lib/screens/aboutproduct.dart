@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart'; // Add the share_plus package
 import 'package:flutter/services.dart';
 import 'package:telemoni/models/product.dart';
-import 'package:telemoni/utils/themeprovider.dart'; // Import for Clipboard
+import 'package:telemoni/utils/themeprovider.dart';
+import 'package:url_launcher/url_launcher.dart'; // Import for Clipboard
 
 class AboutProductWidget extends StatelessWidget {
   final Product product;
@@ -49,7 +50,7 @@ class AboutProductWidget extends StatelessWidget {
                       context,
                     )
                   else
-                    Center(child: Text('Dashboard not available')),
+                    const Center(child: Text('Dashboard not available')),
                 ],
               ),
             ),
@@ -321,9 +322,8 @@ class AboutProductWidget extends StatelessWidget {
   Widget _buildDashboardSection(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final customColors = themeProvider.customColors;
-    final darkmode = themeProvider.isDarkMode;
-    final String shareableLink = "telemoni.in/b/${product.link ?? 'link'}";
-    final String joiningLink = product.joiningLink ?? 'link';
+    final String shareableLink = "https://consumer.telemoni.in/c/${product.link ?? 'link'}";
+    final String joiningLink = product.joininglink ?? 'link';
     final String typeDisplayText;
 
     // Determine type and channel info
@@ -406,12 +406,12 @@ class AboutProductWidget extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 83, 176, 202), // Base color of the card
+                color: const Color.fromARGB(255, 83, 176, 202), // Base color of the card
                 borderRadius: BorderRadius.circular(8),
               ),
               width: double.infinity,
               height:
-                  MediaQuery.of(context).size.height * 0.25, // Adjust as needed
+                  MediaQuery.of(context).size.height * 0.26, // Adjust as needed
             ),
             // Gradient layer over the orange background
             Container(
@@ -428,7 +428,7 @@ class AboutProductWidget extends StatelessWidget {
               ),
               width: double.infinity,
               height:
-                  MediaQuery.of(context).size.height * 0.2, // Match the height
+                  MediaQuery.of(context).size.height * 0.26, // Match the height
             ),
             // Content of the card
             Positioned.fill(
@@ -465,28 +465,6 @@ class AboutProductWidget extends StatelessWidget {
                       ),
                       SizedBox(
                           height: MediaQuery.of(context).size.height * 0.02),
-                      Container(
-                        color: themeProvider.isDarkMode
-                            ? Color.fromARGB(255, 188, 174, 174)
-                            : Colors.orange[
-                                100], // Light shade of orange for the link background
-                        width: double.infinity,
-                        padding: EdgeInsets.all(
-                            MediaQuery.of(context).size.width * 0.03),
-                        child: Text(
-                          joiningLink,
-                          style: TextStyle(
-                            color: themeProvider.isDarkMode
-                                ? Colors.white
-                                : customColors.textColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: MediaQuery.of(context).size.width * 0.04,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.04),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -536,6 +514,49 @@ class AboutProductWidget extends StatelessWidget {
                           ),
                         ],
                       ),
+                      SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.04),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: themeProvider.isDarkMode
+                              ? const Color.fromARGB(255, 188, 174, 174)
+                              : Colors.orange[
+                                  100], // Light shade of orange for the link background
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(
+                                MediaQuery.of(context).size.width * 0.03),
+                          ),
+                        ),
+                        width: double.infinity,
+                        padding: EdgeInsets.all(
+                          MediaQuery.of(context).size.width * 0.03,
+                        ),
+                        child: InkWell(
+    onTap: () async {
+  final Uri url = Uri.parse(joiningLink);
+
+  try {
+    if (!await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication, // Open in external browser
+    )) {
+      throw 'Could not launch $joiningLink';
+    }
+  } catch (e) {
+    debugPrint('Error launching URL: $e');
+  }
+},
+    child: Text(
+      joiningLink,
+      style: TextStyle(
+        color: themeProvider.isDarkMode ? Colors.white : customColors.textColor,
+        fontWeight: FontWeight.bold,
+        fontSize: MediaQuery.of(context).size.width * 0.04,
+        decoration: TextDecoration.underline,
+      ),
+      textAlign: TextAlign.center,
+    ),)),
+                      
                     ],
                   ),
                 ),
