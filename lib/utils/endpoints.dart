@@ -1,6 +1,6 @@
 class Endpoints {
   static const String baseUrl = 'https://server.telemoni.in';
-    // static const String baseUrl = 'http://192.168.31.198';
+    // static const String baseUrl = 'http://192.168.31.198:80';
 
   static const String generateOTP = '$baseUrl/api/auth/user/otpgen';
   static const String addPan = '$baseUrl/api/user/add/pan';

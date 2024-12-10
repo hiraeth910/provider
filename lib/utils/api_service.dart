@@ -26,7 +26,6 @@ class ApiService {
 
   // Method to get the token, either from memory or secure storage if not set
   Future<String?> getTokyo() async {
-
     _token = await secureStorageService.getToken();
     return _token;
   }
@@ -49,7 +48,7 @@ class ApiService {
       final data = json.decode(response.body);
       // return data['otp']; // Adjust according to your API response
     } else {
-      throw Exception('Failed to generate OTP');
+      print(response.body);
     }
   }
 
@@ -305,7 +304,7 @@ class ApiService {
           'Content-Type': 'application/json',
         },
       );
-
+      print(response.body);
       if (response.statusCode == 200) {
         List<dynamic> jsonData = jsonDecode(response.body);
         return jsonData.map((item) => EarningsTrans.fromJson(item)).toList();

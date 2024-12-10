@@ -63,14 +63,16 @@ static String formatDateTime(String timestamp) {
 }
 
 class Balance {
-  final double balance;
+  final int balance;
   final bool req;
 
   Balance({required this.balance, required this.req});
 
   factory Balance.fromJson(Map<String, dynamic> json) {
     return Balance(
-      balance: json['balance'],
+      balance: (json['balance'] is int)
+          ? json['balance']
+          : (json['balance'] as double).round(),
       req: json['req'],
     );
   }
@@ -90,7 +92,10 @@ class EarningsTrans {
   // Factory constructor to parse JSON
   factory EarningsTrans.fromJson(Map<String, dynamic> json) {
     return EarningsTrans(
-      amount: json['amount'],
+      amount: (json['amount'] is int)
+          ? json['amount']
+          : (json['amount'] as double).round(),
+
       buyerName: json['buyer_name'],
       purchaseTime: formatDateTime(json['purchase_time']),
     );

@@ -58,7 +58,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     await _verifyUserStatus();
 
     // If the user is 'provider_user', start a periodic timer to check status every 5 seconds
-    _userCheckTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+    _userCheckTimer = Timer.periodic(const Duration(seconds: 100), (timer) async {
       final user = await LocalStorage.getUser();
       if (user == 'wallet_user') {
         // If user has changed to 'wallet_user', cancel the timer and update verification status
@@ -112,10 +112,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
     if (pickedFile != null) {
       final file = File(pickedFile.path);
-      final fileSize = await file.length(); // Get the file size in bytes
-
-      // Check if the file size is less than or equal to 1 MB (1 * 1024 * 1024 bytes)
-      if (fileSize <= 2 * 1024 * 1024) {
+     
         final bytes = await file.readAsBytes(); // Read file as bytes
         final base64Image = base64Encode(bytes); // Convert to Base64
 
@@ -123,24 +120,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
           _selectedImage =
               file; // Set the selected image (if needed for preview)
           _base64Image = base64Image; // Store the Base64 string
-          _imageError = null; // Reset any previous error
         });
-      } else {
-        // Show an error message in a Snackbar if the file size is greater than 1 MB
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'The image size should be 2 MB or less. Please select another image.'),
-            duration: Duration(seconds: 3), // Duration for the Snackbar
-            backgroundColor: Colors.red, // Optional: Customize background color
-          ),
-        );
-        // Optionally reset the selected image to null if you want to enforce re-upload
-        setState(() {
-          _selectedImage = null; // Reset the selected image
-          _base64Image = null; // Reset the Base64 string
-        });
-      }
+     
     }
   }
 

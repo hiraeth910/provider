@@ -31,7 +31,8 @@ class _EarningsTransactionsState extends State<EarningsTransactions> {
     });
 
     try {
-      final fetchedTransactions = await ApiService().getEarningsTransactions(widget.product.productId);
+      final fetchedTransactions =
+          await ApiService().getEarningsTransactions(widget.product.productId);
       setState(() {
         transactions = fetchedTransactions;
         isLoading = false;
@@ -78,7 +79,8 @@ class _EarningsTransactionsState extends State<EarningsTransactions> {
                         // );
 
                         return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 8.0),
                           child: Padding(
                             padding: const EdgeInsets.all(12.0),
                             child: Column(
@@ -86,12 +88,13 @@ class _EarningsTransactionsState extends State<EarningsTransactions> {
                               children: [
                                 Text(
                                   'Buyer: ${transaction.buyerName}',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
                                 ),
-                              Text(
+                                Text(
                                     'Amount: \$${(transaction.amount * 0.91).round()}'),
-
-                                Text('Purchased on: ${transaction.purchaseTime}'),
+                                Text(
+                                    'Purchased on: ${transaction.purchaseTime}'),
                               ],
                             ),
                           ),

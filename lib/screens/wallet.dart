@@ -44,7 +44,7 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
     try {
       Balance balanceData = await apiService.getBalance();
       setState(() {
-       balance = balanceData.balance.round();
+        balance = balanceData.balance;
         req = balanceData.req;
       });
     } catch (e) {
@@ -54,34 +54,33 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
 
   // Fetches the user's transaction history
   Future<void> fetchTransactions() async {
-  if (isLoading || !hasMoreTransactions) return;
+    if (isLoading || !hasMoreTransactions) return;
 
-  setState(() {
-    isLoading = true;
-  });
-
-  try {
-    final history = await apiService.getWithdrawalHistory(currentPage);
     setState(() {
-      if (currentPage == 1) {
-        // Start fresh when loading the first page
-        transactions = history;
-      } else {
-        transactions.addAll(history);
-      }
+      isLoading = true;
+    });
 
-      isLoading = false;
-      currentPage++;
-      hasMoreTransactions = history.isNotEmpty;
-    });
-  } catch (e) {
-    print('Error fetching transactions: $e');
-    setState(() {
-      isLoading = false;
-    });
+    try {
+      final history = await apiService.getWithdrawalHistory(currentPage);
+      setState(() {
+        if (currentPage == 1) {
+          // Start fresh when loading the first page
+          transactions = history;
+        } else {
+          transactions.addAll(history);
+        }
+
+        isLoading = false;
+        currentPage++;
+        hasMoreTransactions = history.isNotEmpty;
+      });
+    } catch (e) {
+      print('Error fetching transactions: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
-}
-
 
   void _onScroll() {
     if (_scrollController.position.pixels ==
@@ -91,15 +90,15 @@ class _WithdrawalPageState extends State<WithdrawalPage> {
     }
   }
 
-void refreshTransactions() {
-  setState(() {
-    transactions.clear(); // Clear existing transactions
-    currentPage = 1;      // Reset to the first page
-    hasMoreTransactions = true; // Reset to allow further fetching
-  });
-  fetchTransactions();
-  fetchBalanceAndReqStatus();
-}
+  void refreshTransactions() {
+    setState(() {
+      transactions.clear(); // Clear existing transactions
+      currentPage = 1; // Reset to the first page
+      hasMoreTransactions = true; // Reset to allow further fetching
+    });
+    fetchTransactions();
+    fetchBalanceAndReqStatus();
+  }
 
   // Raises a withdrawal request if form is valid
   void raiseWithdrawal() async {
@@ -254,7 +253,7 @@ void refreshTransactions() {
                   );
                 } else {
                   // Show form dialog if no pending transaction and balance is sufficient
-             showDialog(
+                  showDialog(
                     context: context,
                     builder: (BuildContext context) {
                       bool noBankAccounts =
@@ -406,7 +405,7 @@ void refreshTransactions() {
                       );
                     },
                   );
- }
+                }
               },
               child: Text(
                 'Raise Withdrawal',

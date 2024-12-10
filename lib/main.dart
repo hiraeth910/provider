@@ -90,7 +90,10 @@ class _LoginPageState extends State<LoginPage> {
 
     if (phoneNumber.isNotEmpty) {
       try {
+        print('generatingOtpserver');
         generatedOTP = await apiService.generateOTP(_phoneController.text);
+        print('generatingOtpfirebase');
+
         FirebaseAuth.instance.verifyPhoneNumber(
           verificationCompleted: (PhoneAuthCredential credential) {
             print("Verification completed: $credential");
@@ -132,47 +135,52 @@ class _LoginPageState extends State<LoginPage> {
 // Function to handle OTP verification with loader
   Future<void> _verifyOTP() async {
     setState(() => buttonLoad = true); // Start loader
-    String enteredOTP = _otpController.text;
-    String phoneNumber = _phoneController.text;
+    String enteredOTP = _otpController.text.trim();
 
-    if (enteredOTP.isNotEmpty && phoneNumber.isNotEmpty) {
-      try {
-        final cred = PhoneAuthProvider.credential(
-            verificationId: verify, smsCode: enteredOTP);
-        UserCredential userCredential =
-            await FirebaseAuth.instance.signInWithCredential(cred);
-
-        String? fcmToken = await FirebaseMessaging.instance.getToken();
-        if (fcmToken != null) {
-
-          String? idToken = await userCredential.user?.getIdToken();
-          if (idToken != null) {
-            String? serverToken =
-                await apiService.verifyOTP(idToken, phoneNumber, fcmToken);
-
-            if (serverToken != null) {
-              await secureStorageService.storeToken(serverToken);
-              await setUserRole(serverToken);
-              Navigator.pushReplacementNamed(context, '/home');
-            }
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Failed to verify OTP')),
-            );
-          }
-        } 
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
-    } else {
+    if (enteredOTP.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter the OTP')),
       );
+      setState(() => buttonLoad = false);
+      return;
     }
-    setState(() => buttonLoad = false); // Stop loader
+
+    try {
+      final cred = PhoneAuthProvider.credential(
+        verificationId: verify,
+        smsCode: enteredOTP,
+      );
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(cred);
+      // Call your server API
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        String? idToken = await userCredential.user?.getIdToken();
+        if (idToken != null) {
+          String? serverToken = await apiService.verifyOTP(
+              idToken, _phoneController.text.trim(), fcmToken);
+
+          if (serverToken != null) {
+            await secureStorageService.storeToken(serverToken);
+            await setUserRole(serverToken);
+            Navigator.pushReplacementNamed(context, '/home');
+            return;
+          }
+        }
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Failed to verify OTP. Please try again.')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    } finally {
+      setState(() => buttonLoad = false); // Stop loader
+    }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
